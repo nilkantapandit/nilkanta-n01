@@ -5,22 +5,32 @@ import { useEffect, useState } from "react";
 import { hasWebGL } from "@/lib/webgl";
 
 const Experience = dynamic(() => import("./Experience"), { ssr: false });
+const MobileTerminal = dynamic(() => import("./MobileTerminal"), { ssr: false });
+
+/** Phones get the terminal-only view (no 3D) unless the visitor chose "load 3D anyway". */
+const PHONE = "(max-width: 640px), (pointer: coarse) and (max-width: 900px)";
 
 export default function ExperienceClient() {
-  const [webgl, setWebgl] = useState<boolean | null>(null);
-  useEffect(() => setWebgl(hasWebGL()), []);
+  const [mode, setMode] = useState<"3d" | "terminal" | null>(null);
+  const [forced, setForced] = useState(false);
+  useEffect(() => {
+    let force = false;
+    try { force = localStorage.getItem("n01-force-3d") === "1"; } catch {}
+    const phone = window.matchMedia(PHONE).matches;
+    setForced(phone && force);
+    setMode((phone && !force) || !hasWebGL() ? "terminal" : "3d");
+  }, []);
 
-  if (webgl === null) return null;
-  if (!webgl) {
-    return (
-      <div className="fallback">
-        <div className="fallback-card">
-          <h2>NILKANTA N-01</h2>
-          <p>This interactive 3D preview needs WebGL, which isn&apos;t available in this browser or device.</p>
-          <p>Try a current version of Chrome, Edge, Firefox or Safari with hardware acceleration enabled.</p>
-        </div>
-      </div>
-    );
-  }
-  return <Experience />;
+  if (mode === null) return null;
+  if (mode === "terminal") return <MobileTerminal />;
+  return (
+    <>
+      <Experience />
+      {forced && (
+        <button type="button" className="mt-3d-back" onClick={() => { try { localStorage.removeItem("n01-force-3d"); } catch {} location.reload(); }}>
+          ◀ terminal mode
+        </button>
+      )}
+    </>
+  );
 }

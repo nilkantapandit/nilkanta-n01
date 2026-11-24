@@ -8,7 +8,7 @@ export type HoloLayout = "side" | "top";
 const MONO = `"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`;
 const f = (px: number, w = 400) => `${w} ${px}px ${MONO}`;
 
-export const HOLO_WIDTH: Record<HoloLayout, number> = { side: 1000, top: 1400 };
+export const HOLO_WIDTH = 820;
 
 type Pal = { ink: string; dim: string; hot: string; faint: string; fill: string; glow: string; badgeInk: string };
 const PAL: Record<"dark" | "light", Pal> = {
@@ -95,89 +95,95 @@ function schematic(ctx: CanvasRenderingContext2D, p: Pal, x: number, y: number, 
   ctx.restore();
 }
 
-/** Draws the manual; the canvas height fits the content. Returns width / height. */
+/** Draws the manual (one tall page that the hologram scrolls through). Returns its height in px. */
 export function drawGuide(canvas: HTMLCanvasElement, layout: HoloLayout, theme: "dark" | "light") {
-  const W = HOLO_WIDTH[layout];
-  canvas.width = W; canvas.height = 2600;
-  const end = paint(canvas.getContext("2d")!, layout, theme, W, 2600);
+  const W = HOLO_WIDTH;
+  canvas.width = W; canvas.height = 3200;
+  const end = paint(canvas.getContext("2d")!, layout, theme, W, 3200);
   canvas.height = Math.ceil(end);
   paint(canvas.getContext("2d")!, layout, theme, W, canvas.height);
-  return W / canvas.height;
+  return canvas.height;
+}
+
+/** The fixed "glass" over the scrolling page: frame, corner ticks, scanlines, scroll hint. */
+export function drawFrame(canvas: HTMLCanvasElement, theme: "dark" | "light", aspect: number, touch: boolean) {
+  const W = 1024, H = Math.round(W / aspect);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+  const p = PAL[theme];
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = p.faint;
+  for (let y = 0; y < H; y += 6) ctx.fillRect(0, y, W, 1);
+  ctx.strokeStyle = p.dim; ctx.lineWidth = 3; ctx.strokeRect(6, 6, W - 12, H - 12);
+  ctx.strokeStyle = p.hot; ctx.lineWidth = 9;
+  const t = 70;
+  for (const [cx, cy, sx, sy] of [[6, 6, 1, 1], [W - 6, 6, -1, 1], [6, H - 6, 1, -1], [W - 6, H - 6, -1, -1]]) {
+    ctx.beginPath(); ctx.moveTo(cx, cy + sy * t); ctx.lineTo(cx, cy); ctx.lineTo(cx + sx * t, cy); ctx.stroke();
+  }
+  // scroll track (the thumb is a separate moving plane)
+  ctx.fillStyle = p.faint; ctx.fillRect(W - 26, 40, 6, H - 80);
+  ctx.font = f(22); ctx.fillStyle = p.dim; ctx.textAlign = "right";
+  ctx.fillText(touch ? "drag ↕ to scroll" : "scroll ↕ to read", W - 40, H - 22);
 }
 
 function paint(ctx: CanvasRenderingContext2D, layout: HoloLayout, theme: "dark" | "light", W: number, H: number) {
   const p = PAL[theme];
   ctx.clearRect(0, 0, W, H);
-
-  // panel: faint fill, frame, corner ticks, scanlines
   ctx.fillStyle = p.fill; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = p.dim; ctx.lineWidth = 3; ctx.strokeRect(6, 6, W - 12, H - 12);
-  ctx.strokeStyle = p.hot; ctx.lineWidth = 8;
-  const t = 60;
-  for (const [cx, cy, sx, sy] of [[6, 6, 1, 1], [W - 6, 6, -1, 1], [6, H - 6, 1, -1], [W - 6, H - 6, -1, -1]]) {
-    ctx.beginPath(); ctx.moveTo(cx, cy + sy * t); ctx.lineTo(cx, cy); ctx.lineTo(cx + sx * t, cy); ctx.stroke();
-  }
-  ctx.fillStyle = p.faint;
-  for (let y = 0; y < H; y += 6) ctx.fillRect(0, y, W, 1);
 
   ctx.shadowColor = p.glow; ctx.shadowBlur = theme === "dark" ? 10 : 0;
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  const PAD = layout === "side" ? 46 : 56;
-  const BODY = layout === "side" ? 30 : 50;
+  const PAD = 46, BODY = 30;
   const LH = Math.round(BODY * 1.45);
+  const TW = W - PAD * 2;
   let y = PAD + BODY * 1.2;
-
-  const head = (txt: string) => {
-    ctx.font = f(BODY, 700); ctx.fillStyle = p.hot; ctx.fillText("$ " + txt, PAD, y); y += LH;
-  };
+  const lines = (txt: string, x: number, w: number) => { for (const l of wrap(ctx, txt, w)) { ctx.fillText(l, x, y); y += LH; } };
+  const head = (txt: string) => { ctx.font = f(BODY, 700); ctx.fillStyle = p.hot; ctx.fillText("$ " + txt, PAD, y); y += LH; };
 
   // title bar
   ctx.font = f(BODY + 8, 700); ctx.fillStyle = p.hot; ctx.fillText("N01 // FIELD MANUAL", PAD, y);
   ctx.font = f(BODY - 6); ctx.fillStyle = p.dim; ctx.textAlign = "right"; ctx.fillText(layout === "side" ? "? key · hide" : "", W - PAD, y); ctx.textAlign = "left";
   y += 22;
-  ctx.fillStyle = p.dim; ctx.fillRect(PAD, y, W - PAD * 2, 2); y += LH;
+  ctx.fillStyle = p.dim; ctx.fillRect(PAD, y, TW, 2); y += LH;
   ctx.font = f(BODY); ctx.fillStyle = p.dim;
-  for (const l of wrap(ctx, layout === "side" ? "No Linux needed — use it with your mouse like a real gadget." : "No Linux needed — tap it like a real gadget.", W - PAD * 2)) { ctx.fillText(l, PAD, y); y += LH; }
+  lines(layout === "side" ? "No Linux needed — use it with your mouse like a real gadget." : "No Linux needed — tap it like a real gadget.", PAD, TW);
   y += LH * 0.3;
 
   head("quick start");
   STEPS.forEach((s, i) => {
     ctx.font = f(BODY, 700); ctx.fillStyle = p.hot; ctx.fillText(String(i + 1), PAD, y);
     ctx.font = f(BODY); ctx.fillStyle = p.ink;
-    for (const l of wrap(ctx, s, W - PAD * 2 - BODY * 1.4)) { ctx.fillText(l, PAD + BODY * 1.4, y); y += LH; }
+    lines(s, PAD + BODY * 1.4, TW - BODY * 1.4);
   });
 
-  if (layout === "side") {
-    y += LH * 0.4;
-    const sw = W - PAD * 2;
-    schematic(ctx, p, PAD, y, sw / 600);
-    y += (sw / 600) * 300 + LH * 1.1;
+  y += LH * 0.4;
+  schematic(ctx, p, PAD, y, TW / 600);
+  y += (TW / 600) * 300 + LH * 1.1;
 
-    PARTS.forEach(([n, name, what]) => {
-      ctx.fillStyle = p.hot; ctx.beginPath(); ctx.arc(PAD + 14, y - BODY * 0.36, 15, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = p.badgeInk; ctx.font = f(BODY - 10, 700); ctx.textAlign = "center"; ctx.fillText(n, PAD + 14, y - BODY * 0.36 + 7); ctx.textAlign = "left";
-      ctx.font = f(BODY - 2, 700); ctx.fillStyle = p.ink; ctx.fillText(name, PAD + 44, y);
-      ctx.font = f(BODY - 4); ctx.fillStyle = p.dim; ctx.fillText(what, PAD + 44 + 230, y);
-      y += LH * 0.98;
-    });
-    y += LH * 0.4;
-    head("mouse / touch");
-    ctx.font = f(BODY - 2); ctx.fillStyle = p.ink;
-    for (const l of ["drag background — rotate · scroll — zoom", "orange dots — part info · reset-view — start"]) { ctx.fillText(l, PAD, y); y += LH; }
+  head("the parts");
+  PARTS.forEach(([n, name, what]) => {
+    ctx.fillStyle = p.hot; ctx.beginPath(); ctx.arc(PAD + 14, y - BODY * 0.36, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = p.badgeInk; ctx.font = f(BODY - 10, 700); ctx.textAlign = "center"; ctx.fillText(n, PAD + 14, y - BODY * 0.36 + 7); ctx.textAlign = "left";
+    ctx.font = f(BODY, 700); ctx.fillStyle = p.ink; ctx.fillText(name, PAD + 44, y); y += LH * 0.9;
+    ctx.font = f(BODY - 2); ctx.fillStyle = p.dim; lines(what, PAD + 44, TW - 44);
+    y += LH * 0.15;
+  });
+  y += LH * 0.3;
+  head(layout === "side" ? "mouse" : "touch");
+  ctx.font = f(BODY - 2); ctx.fillStyle = p.ink;
+  for (const l of layout === "side"
+    ? ["drag the background — rotate the view", "scroll — zoom (scroll over this panel to read it)", "orange dots — what each part is", "reset-view — back to the start"]
+    : ["drag the background — rotate · pinch — zoom", "drag this panel — scroll it", "orange dots — what each part is"]) lines(l, PAD, TW);
+  if (layout === "side") {
     y += LH * 0.2;
     head("keyboard");
     ctx.font = f(BODY - 2); ctx.fillStyle = p.ink;
-    for (const l of ["↑ ↓ ← → move · Enter open · Esc back", "hold Space — push-to-talk (FIELD_COMMS)", "? — show / hide this manual"]) { ctx.fillText(l, PAD, y); y += LH; }
-  } else {
-    y += LH * 0.2;
-    head("controls");
-    ctx.font = f(BODY - 2); ctx.fillStyle = p.ink;
-    for (const l of ["wheel / swipe pad move · ✓ select", "✕ back · ≡ menu · ⛶ fullscreen", "drag — rotate · pinch — zoom"]) { ctx.fillText(l, PAD, y); y += LH; }
+    for (const l of ["↑ ↓ ← → move · Enter open · Esc back", "hold Space — push-to-talk (FIELD_COMMS)", "? — show / hide this manual"]) lines(l, PAD, TW);
   }
   y += LH * 0.3;
 
   ctx.shadowBlur = 0;
   ctx.font = f(BODY - 8); ctx.fillStyle = p.dim;
-  ctx.fillText("# visual simulation — nothing is transmitted", PAD, y);
+  lines("# visual simulation — nothing is transmitted", PAD, TW);
   return y + PAD;
 }

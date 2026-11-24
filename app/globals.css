@@ -234,3 +234,29 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 /* white deck: callout markers turn orange so they stand out on the light shell */
 :root[data-deck="light"] { --hs-dot: #ff7a1a; --hs-glow: rgba(255, 122, 26, 0.6); --hs-ring: rgba(31, 29, 26, 0.85); }
 :root[data-deck="light"] .hs-dot::after { border-color: rgba(255, 122, 26, 0.9); }
+
+/* ---------- phone: terminal-only mode (no 3D) ---------- */
+.mt { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; padding: max(12px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)); font-family: var(--mono); color: var(--ink); }
+.mt-note { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-left: 2px solid var(--orange); background: rgba(var(--panel), 0.85); font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); }
+.mt-note b { color: var(--orange); font-size: 12px; letter-spacing: 0.06em; }
+.mt-note button { justify-self: start; font: inherit; color: var(--ink-dim); background: none; border: none; padding: 0; text-decoration: underline; cursor: pointer; }
+.mt-screen { position: relative; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; box-shadow: 0 0 40px rgba(255, 140, 30, 0.12); }
+.mt-screen.hidden { display: none; }
+.mt-canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; }
+.mt-boot, .mt-back { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); font: 600 13px var(--mono); color: #1a0d02; background: var(--orange); border: none; border-radius: 4px; padding: 8px 14px; }
+.mt-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 12px; border: 1px solid var(--line); background: rgba(var(--panel), 0.9); font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.mt-l { white-space: pre-wrap; }
+.mt-in { color: var(--ink-strong); }
+.mt-out, .mt-pre { color: var(--ink); }
+.mt-dim { color: var(--ink-dim); }
+.mt-accent, .mt-head { color: var(--orange); font-weight: 700; }
+.mt-err { color: #ff5a3c; }
+.mt-sys { color: var(--green-ui); }
+.mt-link a { color: var(--amber-ui); }
+.mt-prompt { display: flex; gap: 8px; align-items: baseline; margin-top: 4px; }
+.mt-prompt span { color: var(--orange); white-space: nowrap; }
+.mt-input { flex: 1; min-width: 0; font: 16px var(--mono); /* 16px stops iOS zoom-on-focus */ color: var(--ink); background: none; border: none; outline: none; caret-color: var(--orange); padding: 0; }
+.mt-chips { flex: 0 0 auto; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.mt-chips button { flex: 0 0 auto; font: 12px var(--mono); color: var(--ink); background: rgba(var(--panel), 0.9); border: 1px solid var(--line); border-radius: 3px; padding: 7px 10px; }
+.mt-chips button:active { border-color: var(--orange); color: var(--orange); }
+.mt-3d-back { position: fixed; z-index: 60; left: 12px; bottom: 12px; font: 11px var(--mono); color: var(--ink); background: rgba(var(--panel), 0.9); border: 1px solid var(--line); padding: 6px 10px; }
