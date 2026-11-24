@@ -13,7 +13,7 @@ import { complete, runCommand, type Line } from "@/lib/terminal/registry";
 import { welcomeLines } from "@/lib/terminal/commands";
 import { BANNER } from "@/lib/terminal/banner";
 import { deviceAudio } from "@/lib/deviceAudio";
-import { setPowerLevel } from "@/lib/deviceMaterials";
+import { flashControl, setPowerLevel } from "@/lib/deviceMaterials";
 
 export const SCREEN_W = 1280;
 export const SCREEN_H = 853;
@@ -192,9 +192,18 @@ class ScreenOS {
   /** Any key while asleep wakes the device. Returns true if the key was consumed by waking. */
   private wakeIfNeeded() {
     if (this.phase === "sleep") { this.power(); return true; }
-    if (this.phase === "off") { this.boot(); return true; }
+    if (this.phase === "off") { this.nudgePower(); return true; } // only ⏻ boots it
     if (this.phase === "booting") { if (this.bootT > T_BACKLIGHT) this.bootT = Math.max(this.bootT, T_LINUX + 0.6); return true; }
     return false;
+  }
+
+  /** Powered off: point the visitor at the ⏻ key (brighter prompt + the key lights up). */
+  private nudge = 0;
+  nudgePower() {
+    this.nudge = 1.6;
+    flashControl("N01_Btn_Power");
+    deviceAudio.play("tick");
+    this.dirty = true;
   }
 
   /** Any interaction with the screen dismisses a notification early, so it never blocks input. */
@@ -467,6 +476,11 @@ class ScreenOS {
       if (this.bootT >= T_ONLINE) { this.phase = "online"; this.app = "menu"; this.flicker = 0.3; deviceAudio.play("confirm"); this.sync(); }
     }
     if (this.flicker > 0) { this.flicker = Math.max(0, this.flicker - dt); animating = true; }
+    if (this.phase === "off") {
+      if (this.nudge > 0) { this.nudge = Math.max(0, this.nudge - dt); animating = true; }
+      if (Math.floor(this.t * 2) !== Math.floor((this.t - dt) * 2)) this.dirty = true;             // prompt blink
+      if (Math.floor(this.t / 2.4) !== Math.floor((this.t - dt) / 2.4)) flashControl("N01_Btn_Power"); // key breathes
+    }
     if (this.phase === "online") {
       if (this.app === "arcade") { this.snake.acc += dt; while (this.snake.acc > 0.13) { this.snake.acc -= 0.13; this.stepSnake(); } animating = true; }
       if (this.app === "matrix") { this.matrixT += dt; animating = true; if (this.matrixT > 12) this.menu(); }
@@ -506,7 +520,11 @@ class ScreenOS {
     g.save();
     g.fillStyle = C.OFF;
     g.fillRect(0, 0, SCREEN_W, SCREEN_H);
-    if (this.level <= 0.003) { g.restore(); return; }
+    if (this.level <= 0.003) {
+      if (this.phase === "off") this.drawStandby(g);
+      g.restore();
+      return;
+    }
     let alpha = this.level;
     const calm = reducedMotion();
     if (this.flicker > 0 && !calm) alpha *= 0.9 + 0.1 * Math.random();
@@ -624,6 +642,19 @@ class ScreenOS {
         if (Math.floor(this.t * 2) % 2 === 0) { g.fillStyle = C.AMBER; g.fillRect(x + pad + PS.length * cw + 2, ly - 24, cw * 0.62, 28); }
       }
     });
+    g.restore();
+  }
+
+  /** Powered off: a faint prompt on the dark glass, like a standby label. */
+  private drawStandby(g: CanvasRenderingContext2D) {
+    const on = Math.floor(this.t * 2) % 2 === 0 || this.nudge > 0;
+    const a = this.nudge > 0 ? 0.95 : 0.55;
+    g.save();
+    g.globalAlpha = a;
+    g.textAlign = "center";
+    this.text(g, "N-01 · POWERED OFF", SCREEN_W / 2, SCREEN_H / 2 - 70, "rgba(255,176,46,0.6)", 44, true, false);
+    if (on) this.text(g, "PRESS ⏻ TO BOOT", SCREEN_W / 2, SCREEN_H / 2 + 30, "#ffb02e", 76, true, false);
+    this.text(g, "power key · centre of the row below", SCREEN_W / 2, SCREEN_H / 2 + 110, "rgba(255,176,46,0.5)", 32, false, false);
     g.restore();
   }
 

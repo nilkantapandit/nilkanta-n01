@@ -86,6 +86,13 @@ function ThemeToggle() {
   );
 }
 
+/** Mirror the effective deck colour onto <html data-deck> so markers can contrast with the shell. */
+function DeckAttr() {
+  const deck = useDevice((s) => deckOf(s));
+  useEffect(() => { document.documentElement.dataset.deck = deck; }, [deck]);
+  return null;
+}
+
 export default function Experience() {
   const resetSignal = useDevice((s) => s.resetSignal);
   const immersive = useDevice((s) => s.immersive);
@@ -152,6 +159,7 @@ export default function Experience() {
       <ScreenInput />
       <EasterEggManager />
       <Toast />
+      <DeckAttr />
       <PointerFX />
       <Loader />
     </>

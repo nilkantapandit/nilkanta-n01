@@ -149,7 +149,10 @@ function Marker({ hotspot }: { hotspot: Hotspot }) {
 
 /** DOM overlay with all technical callout markers (positions driven by HotspotProjector). */
 export default function DeviceHotspots() {
-  const visible = useDevice((s) => s.calloutsVisible && !s.screenFocus && !s.immersive && s.overlay === "none" && !!s.modelRoot);
+  const mobile = useIsMobile();
+  // Markers stay up while the screen is operated on desktop; on phones they step aside so taps
+  // reach the keys / screen (they come back when the visitor exits the screen).
+  const visible = useDevice((s) => s.calloutsVisible && !s.immersive && s.overlay === "none" && !!s.modelRoot && !(mobile && s.screenFocus));
   if (!visible) return null;
   return (
     <div className="hs-layer" aria-label="Technical callouts">

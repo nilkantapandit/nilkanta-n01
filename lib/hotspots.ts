@@ -133,7 +133,7 @@ export const HOTSPOTS: Hotspot[] = [
   {
     id: "switch",
     node: "N01_Power_Mode_Switch",
-    offset: [0.0095, 0.0002, 0],
+    offset: [0.017, 0.003, 0],   // beside the knob, clear of it even on phones
     normal: [0, 1, 0],
     card: [-120, -140],
     title: "MODE SWITCH",

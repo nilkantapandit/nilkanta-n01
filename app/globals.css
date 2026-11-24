@@ -230,3 +230,7 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 :root[data-theme="light"] .nm-tx, :root[data-theme="light"] .nm-tx .nm-bar,
 :root[data-theme="light"] .n01-mode.tx .nm-tag, :root[data-theme="light"] .nm-ptt.on span { color: #b8320a; }
 :root[data-theme="light"] .nm-ptt.on { color: #5a1c05; border-color: #b8320a; background: rgba(184, 50, 10, 0.07); }
+
+/* white deck: callout markers turn orange so they stand out on the light shell */
+:root[data-deck="light"] { --hs-dot: #ff7a1a; --hs-glow: rgba(255, 122, 26, 0.6); --hs-ring: rgba(31, 29, 26, 0.85); }
+:root[data-deck="light"] .hs-dot::after { border-color: rgba(255, 122, 26, 0.9); }

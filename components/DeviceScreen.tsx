@@ -57,9 +57,8 @@ export default function DeviceScreen() {
     if (process.env.NODE_ENV !== "production") {
       (window as unknown as { __n01screen?: unknown }).__n01screen = { os: screenOS, mesh: screen, w: SCREEN_W, h: SCREEN_H };
     }
-    // power-on: the display starts dark, then boots
-    const id = screenOS.phase === "off" ? window.setTimeout(() => screenOS.boot(), 900) : undefined;
-    return () => { node.remove(screen, glass); if (id) window.clearTimeout(id); };
+    // the N-01 starts powered off: the visitor boots it with the ⏻ key (standby prompt on the glass)
+    return () => { node.remove(screen, glass); };
   }, [root, screen, glass]);
 
   useEffect(() => () => { texture.dispose(); screen.geometry.dispose(); (screen.material as THREE.Material).dispose(); glass.geometry.dispose(); (glass.material as THREE.Material).dispose(); }, [texture, screen, glass]);
