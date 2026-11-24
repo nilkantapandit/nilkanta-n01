@@ -23,21 +23,21 @@ export const content = {
   currentOrg: "Viacon Marketing & Technologies",
 
   /** First-person bio. Written from confirmed facts — TODO(nilkanta): rewrite in your own words if you like. */
-  bio: "I'm a DevOps engineer who keeps servers and websites running fast, secure and boring. I started as an IT intern in 2024, moved into cloud infrastructure and DevOps, and today I look after client websites at Viacon — WordPress and WooCommerce operations, Cloudflare security, forms and integrations, and the monthly reports clients actually read. I automate the repetitive parts with Bash, Python, Docker and GitHub Actions, and in my spare time I design hardware like the N-01 you're holding." as string | null,
+  bio: "I'm a DevOps engineer who builds and runs the plumbing behind client projects: AWS infrastructure, Docker images and GitHub Actions pipelines that ship to EKS, and Cloudflare in front of it all. I also handle the messy side of production: security incident response, forensic clean-ups, host migrations and cost investigations, written up in reports clients can act on. I started as an IT intern in 2024, and in my spare time I design hardware like the N-01 you're holding." as string | null,
   /** "At a glance" rows on the ABOUT page. */
   glance: [
     ["Role", "DevOps Engineer · Viacon Marketing & Technologies"],
     ["In IT since", "2024 (intern → associate → engineer)"],
-    ["Focus", "DevOps · web operations · website security"],
-    ["Stack", "Linux · Docker · GitHub Actions · Nginx · Cloudflare · WordPress"],
+    ["Focus", "Cloud infrastructure · CI/CD · edge security · incident response"],
+    ["Stack", "AWS (EC2, EKS) · Docker · GitHub Actions · Cloudflare · Linux · Bash"],
   ] as [string, string][],
   /** What I do — CV-style highlights (no qualifications, by request). */
   whatIDo: [
-    "Keep client websites healthy — WordPress / WooCommerce maintenance, staging sites and hosting moves (incl. managed hosts like Kinsta)",
-    "Harden security — Content-Security-Policy and security headers through Cloudflare; clean-up of compromised sites",
-    "Wire up forms & integrations — Gravity Forms lead routing, HubSpot → Gravity Forms migrations, cookie-consent (Cookiebot) fixes, multilingual sites (WPML)",
-    "Automate — Bash server-setup scripts, a Flask maintenance-report generator, Dockerised apps built by GitHub Actions CI",
-    "Write it up — proposals, hosting comparisons, incident and technical reports for clients",
+    "Run AWS infrastructure (EC2) for dedicated client projects; build and push Docker images to container registries (with exposure to Amazon EKS) so dev teams can deploy on their own",
+    "Build CI/CD pipelines with GitHub Actions, DockerHub and EKS — automated, auditable deployments with rollback",
+    "Own the edge on Cloudflare — DNS, traffic routing, CDN, DDoS rules, SSL/TLS and security headers (CSP, X-Frame-Options, SRI, Permissions-Policy)",
+    "Lead security incident response — SEO spam, malicious directories, poisoned .htaccess, obfuscated backdoors; forensic Bash over SSH and written investigation reports",
+    "Migrate sites between hosts with minimal downtime and track down cloud cost drivers (e.g. EC2 egress)",
   ],
   offTheClock: [
     "Designing the NILKANTA N-01 cyberdeck in Blender",
@@ -47,18 +47,20 @@ export const content = {
   aboutFacts: [
     "DevOps Engineer at Viacon Marketing & Technologies (since Nov 2025)",
     "Background in DevOps, cloud infrastructure and IT operations",
-    "Day-to-day: WordPress site management, website security remediation, technical reports",
+    "Day-to-day: AWS (EC2 / EKS), Docker, GitHub Actions CI/CD, Cloudflare and security incident response",
     "Designer of the NILKANTA N-01 cyberdeck concept shown on this site",
   ],
   /** TODO(nilkanta): location / timezone line, e.g. "Kolkata, India · IST" — only if you want it public. */
   location: null as string | null,
 
   skills: [
-    { group: "DevOps & infrastructure", items: ["Containers — Docker, Docker Compose", "CI with GitHub Actions", "Linux server setup — Nginx, Bash automation", "Cloud infrastructure & IT operations"] },
-    { group: "Web operations", items: ["WordPress site management & maintenance", "Website security remediation & security headers", "Automated client maintenance reports"] },
+    { group: "Cloud & containers", items: ["AWS — EC2, cost analysis (egress)", "Docker images & registries (DockerHub)", "Amazon EKS (exposure)", "Docker Compose"] },
+    { group: "CI/CD", items: ["GitHub Actions → DockerHub → EKS", "Automated, auditable deploys with rollback"] },
+    { group: "Edge & security", items: ["Cloudflare — DNS, routing, CDN, DDoS rules, SSL/TLS", "Security headers — CSP, X-Frame-Options, SRI, Permissions-Policy", "Incident response & forensics (Bash over SSH)"] },
+    { group: "Web operations", items: ["Host migrations (GoDaddy → Kinsta, Migrate Guru)", "Gravity Forms ↔ HubSpot, Cookiebot, GTM, reCAPTCHA", "WordPress maintenance & monthly reports"] },
     { group: "3D & design", items: ["Blender modelling (N-01 concept)"] },
   ],
-  toolbox: ["Linux", "Bash", "Docker", "Docker Compose", "GitHub Actions", "Nginx", "Python / Flask", "WordPress", "Cloudflare"] as string[] | null,
+  toolbox: ["AWS EC2", "Amazon EKS", "Docker", "DockerHub", "GitHub Actions", "Cloudflare", "Linux", "Bash", "SSH", "Nginx", "Python / Flask", "Kinsta", "WordPress"] as string[] | null,
 
   projects: [
     {
@@ -103,11 +105,14 @@ export const content = {
     {
       title: "DevOps Engineer", org: "Viacon Marketing & Technologies", period: "Nov 2025 – present",
       notes: [
-        "Run and maintain a portfolio of client WordPress / WooCommerce websites, including staging sites and managed hosting (Kinsta)",
-        "Security remediation: CSP / security-header hardening behind Cloudflare, clean-up of compromised sites, incident write-ups",
-        "Forms and integrations: Gravity Forms lead routing, HubSpot → Gravity Forms migrations, Cookiebot consent fixes, WPML multilingual sites",
-        "Built my own Flask app that generates the monthly client maintenance reports (.docx)",
-        "Client-facing deliverables: proposals, hosting comparisons, technical reports, site handovers",
+        "Manage AWS cloud infrastructure, including EC2 instances, for dedicated client projects; build and push Docker images to container registries (with exposure to Amazon EKS) so development teams can deploy independently.",
+        "Build and maintain CI/CD pipelines using GitHub Actions integrated with DockerHub and EKS for automated, auditable deployments with rollback.",
+        "Manage DNS, traffic routing and security policies through Cloudflare, including CDN configuration, DDoS protection rules, SSL/TLS and security headers (CSP, X-Frame-Options, SRI, Permissions-Policy).",
+        "Lead WordPress security incident response for client sites: identified SEO spam, malicious directories, poisoned .htaccess files and obfuscated backdoors; collected evidence with forensic Bash scripts over SSH and produced forensic investigation reports.",
+        "Migrate client websites between hosts (GoDaddy to Kinsta, server-to-server with Migrate Guru) with minimal downtime, coordinating with client IT teams and resolving post-migration issues.",
+        "Replaced HubSpot embedded forms with Gravity Forms synced to HubSpot and configured Cookiebot consent, Google Tag Manager and reCAPTCHA so forms stay usable regardless of visitor cookie choices.",
+        "Diagnosed AWS cost drivers for a client EC2 workload, identifying data-transfer-out egress as the main expense and recommending remediation.",
+        "Deliver monthly maintenance reports and client-facing technical documents (hosting comparisons, upgrade proposals); keep servers, plugins, images and dependencies patched.",
       ],
     },
     {
@@ -118,9 +123,10 @@ export const content = {
   ] as Role[],
 
   security: [
-    "Website security-header hardening (Content-Security-Policy and related headers) behind Cloudflare",
-    "Clean-up and remediation of compromised WordPress sites",
-    "Security findings written up as client-facing technical reports",
+    "Incident response: SEO spam, malicious directories, poisoned .htaccess files and obfuscated backdoors found and removed",
+    "Forensic evidence collection with Bash scripts over SSH, written up as investigation reports",
+    "Edge security on Cloudflare: DDoS rules, SSL/TLS, CSP, X-Frame-Options, SRI, Permissions-Policy",
+    "Patching: servers, plugins, images and dependencies kept up to date",
   ],
 
   art: [
