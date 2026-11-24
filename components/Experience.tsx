@@ -1,5 +1,6 @@
 "use client";
 
+import Guide, { GuideButton } from "./Guide";
 import PointerFX from "./PointerFX";
 import { Component, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -142,6 +143,7 @@ export default function Experience() {
         <div className="hud-bottom">
           <HintBar />
           <div className="hud-actions">
+            <GuideButton />
             <ThemeToggle />
             <DeckToggle />
             <SoundToggle />
@@ -159,6 +161,7 @@ export default function Experience() {
       <EasterEggManager />
       <Toast />
       <DeckAttr />
+      <Guide />
       <PointerFX />
       <Loader />
     </>

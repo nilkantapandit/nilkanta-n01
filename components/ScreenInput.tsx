@@ -48,7 +48,7 @@ export default function ScreenInput() {
         ArrowUp: () => screenOS.nav("up"), ArrowDown: () => screenOS.nav("down"),
         ArrowLeft: () => screenOS.nav("left"), ArrowRight: () => screenOS.nav("right"),
         KeyW: () => screenOS.nav("up"), KeyS: () => screenOS.nav("down"), KeyA: () => screenOS.nav("left"), KeyD: () => screenOS.nav("right"),
-        Enter: () => screenOS.select(), Space: () => screenOS.select(),
+        Enter: () => screenOS.select(), // Space is push-to-talk
         Escape: () => backAction(), Backspace: () => backAction(),
       };
       const fn = map[e.code];

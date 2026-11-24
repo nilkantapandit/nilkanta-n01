@@ -120,6 +120,9 @@ type DeviceState = {
   resetSignal: number;
   requestReset: () => void;
   /** Bumping this asks the camera rig to turn the view square-on to the device screen. */
+  /** The "field manual" (how-to) overlay. */
+  guideOpen: boolean;
+  setGuideOpen: (v: boolean) => void;
   /** Bumped by the `shutdown` / `poweroff` terminal commands: the screen OS powers the N-01 down. */
   powerOffSignal: number;
   powerOffCmd: string | null;
@@ -243,6 +246,8 @@ export const useDevice = create<DeviceState>((set, get) => ({
 
   resetSignal: 0,
   requestReset: () => set({ resetSignal: get().resetSignal + 1 }),
+  guideOpen: false,
+  setGuideOpen: (v) => set({ guideOpen: v }),
   powerOffSignal: 0,
   powerOffCmd: null,
   requestPowerOff: (cmd) => set({ powerOffSignal: get().powerOffSignal + 1, powerOffCmd: cmd ?? null }),

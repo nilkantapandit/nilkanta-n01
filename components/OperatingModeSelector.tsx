@@ -159,16 +159,36 @@ export default function OperatingModeSelector() {
     return () => window.clearInterval(id);
   }, []);
 
-  // hold Space to talk (FIELD COMMS only; ignored while typing or operating the screen)
+  // Hold Space to talk: works anywhere while the N-01 is on in FIELD_COMMS — including while the
+  // screen is being operated — except when actually typing text (the on-screen terminal, or any
+  // other text field), where Space must type a space. Capture phase so a focused button can't
+  // swallow it as a click.
   useEffect(() => {
-    const typing = () => document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement;
-    const down = (e: KeyboardEvent) => {
-      if (e.code !== "Space" || e.repeat || typing() || useDevice.getState().screenFocus || useDevice.getState().mode !== "field") return;
-      e.preventDefault(); startTx();
+    let held = false;
+    const typingText = () => {
+      const a = document.activeElement;
+      if (a instanceof HTMLTextAreaElement || (a instanceof HTMLElement && a.isContentEditable)) return true;
+      if (!(a instanceof HTMLInputElement)) return false;
+      if (a.classList.contains("screen-input")) return useDevice.getState().screenApp === "terminal"; // menus aren't text
+      return !["button", "checkbox", "radio", "range"].includes(a.type);
     };
-    const up = (e: KeyboardEvent) => { if (e.code === "Space") stopTx(); };
-    window.addEventListener("keydown", down); window.addEventListener("keyup", up);
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || typingText()) return;
+      const s = useDevice.getState();
+      if (!s.powered || s.mode !== "field") return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.repeat || held) return;
+      held = true; startTx();
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || !held) return;
+      e.preventDefault(); e.stopPropagation(); // no button "click" on release
+      held = false; stopTx();
+    };
+    const release = () => { if (held) { held = false; stopTx(); } };
+    window.addEventListener("keydown", down, true); window.addEventListener("keyup", up, true);
+    window.addEventListener("blur", release);
+    return () => { window.removeEventListener("keydown", down, true); window.removeEventListener("keyup", up, true); window.removeEventListener("blur", release); };
   }, []);
 
   if (!powered || !ready || immersive) return null;

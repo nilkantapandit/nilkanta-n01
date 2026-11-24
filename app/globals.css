@@ -234,3 +234,40 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 /* white deck: callout markers turn orange so they stand out on the light shell */
 :root[data-deck="light"] { --hs-dot: #ff7a1a; --hs-glow: rgba(255, 122, 26, 0.6); --hs-ring: rgba(31, 29, 26, 0.85); }
 :root[data-deck="light"] .hs-dot::after { border-color: rgba(255, 122, 26, 0.9); }
+
+/* ---------- field manual (how-to overlay) ---------- */
+.guide { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 16px; background: rgba(var(--panel), 0.55); overflow: auto; }
+.guide-card { width: min(760px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: rgba(var(--panel), 0.97); border: 1px solid var(--line); border-left: 2px solid var(--orange); padding: 14px 18px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--ink); }
+.guide-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--orange); letter-spacing: 0.08em; font-weight: 700; }
+.guide-x { font: inherit; font-weight: 400; letter-spacing: 0; color: var(--ink-dim); background: none; border: 1px solid var(--line); padding: 2px 8px; cursor: pointer; }
+.guide-lede { margin: 10px 0 8px; color: var(--ink-dim); }
+.guide-steps { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 18px; }
+.guide-steps b { display: inline-block; width: 18px; color: var(--orange); }
+.guide kbd { font: inherit; font-size: 11px; padding: 0 4px; border: 1px solid var(--line); color: var(--ink); }
+.guide code { color: var(--orange); }
+.g-svg { width: 100%; height: auto; display: block; margin: 4px 0 8px; border: 1px solid var(--line); }
+.g-gridline { fill: none; stroke: rgba(var(--ink-rgb), 0.07); stroke-width: 1; }
+.g-body { fill: rgba(var(--ink-rgb), 0.04); stroke: rgba(var(--ink-rgb), 0.75); stroke-width: 1.5; }
+.g-part { fill: none; stroke: rgba(var(--ink-rgb), 0.7); stroke-width: 1.2; }
+.g-dim { stroke-dasharray: 3 3; stroke: rgba(var(--ink-rgb), 0.4); }
+.g-hot { stroke: var(--orange); stroke-width: 1.6; }
+.g-screen { fill: rgba(255, 140, 30, 0.14); stroke: none; }
+.g-scr { font: 9px var(--mono); fill: var(--ink-dim); }
+.g-sel { fill: var(--orange); }
+.g-key { font: 11px var(--mono); fill: var(--ink); text-anchor: middle; }
+.g-lead { stroke: var(--orange); stroke-width: 1; stroke-dasharray: 2 2; }
+.g-badge { fill: var(--orange); }
+.g-num { font: 700 10px var(--mono); fill: #fff; text-anchor: middle; }
+.guide-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 16px; margin: 0 0 10px; }
+.guide-parts dt { font-weight: 700; }
+.guide-parts dt span { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 6px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 10px; }
+.guide-parts dd { margin: 0 0 0 22px; color: var(--ink-dim); }
+.guide-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; padding-top: 8px; border-top: 1px solid var(--line); }
+.guide-cols h3 { font-size: 11px; font-weight: 500; color: var(--orange); margin: 0 0 2px; }
+.guide-cols p { margin: 0 0 2px; color: var(--ink-dim); }
+.guide-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); color: rgba(var(--ink-rgb), 0.4); font-size: 10.5px; }
+@media (max-width: 640px) {
+  .guide-card { padding: 12px; font-size: 11.5px; }
+  .guide-steps, .guide-parts, .guide-cols { grid-template-columns: 1fr; }
+  .guide-foot { flex-direction: column; align-items: stretch; }
+}
