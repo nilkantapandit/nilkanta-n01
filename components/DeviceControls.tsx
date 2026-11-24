@@ -27,6 +27,18 @@ function resolve(obj: THREE.Object3D | null): { id: ControlId; node: THREE.Objec
   return null;
 }
 
+/**
+ * The control under the pointer — but only when it is the nearest thing hit. r3f also delivers
+ * pointer / wheel events to objects hidden behind the first hit (e.g. the nav wheel seen through
+ * the chassis from the side), which must not react.
+ */
+function frontControl(e: { object: THREE.Object3D; intersections: { object: THREE.Object3D }[] }) {
+  const r = resolve(e.object);
+  if (!r) return null;
+  const front = resolve(e.intersections[0]?.object ?? null);
+  return front && front.id === r.id ? r : null;
+}
+
 const basePos = new WeakMap<THREE.Object3D, THREE.Vector3>();
 /** Short physical press along the key's axis + a brief orange illumination. */
 function press(node: THREE.Object3D, depth = 0.0008) {
@@ -126,7 +138,7 @@ export function useControlHandlers() {
 
     return {
       onPointerOver: (e: ThreeEvent<PointerEvent>) => {
-        const r = resolve(e.object);
+        const r = frontControl(e);
         if (!r) return;
         e.stopPropagation();
         useDevice.getState().setHoverLabel(CONTROL_LABELS[r.id]);
@@ -145,7 +157,7 @@ export function useControlHandlers() {
         if (r.id === "touchpad") touchpadGlow(false);
       },
       onPointerDown: (e: ThreeEvent<PointerEvent>) => {
-        const r = resolve(e.object);
+        const r = frontControl(e);
         if (!r) return;
         e.stopPropagation();
         holdControls();
@@ -156,7 +168,7 @@ export function useControlHandlers() {
         }
       },
       onWheel: (e: ThreeEvent<WheelEvent>) => {
-        const r = resolve(e.object);
+        const r = frontControl(e);
         if (!r || r.id !== "wheel") return;
         e.stopPropagation();
         const now = performance.now();
@@ -168,7 +180,7 @@ export function useControlHandlers() {
         screenOS.nav(dir > 0 ? "down" : "up");
       },
       onClick: (e: ThreeEvent<MouseEvent>) => {
-        const r = resolve(e.object);
+        const r = frontControl(e);
         if (!r) return;
         if (e.delta > 6) return; // it was a drag, not a click
         e.stopPropagation();

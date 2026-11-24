@@ -118,7 +118,7 @@ public/models/             nilkanta-n01.glb (exported from NILKANTA_N01_Master.b
 ## Deploy
 
 Standard Next.js app — no environment variables are required. On Vercel: import the repository,
-keep the detected **Next.js** preset, root directory `./`, build `next build`. Node ≥ 20.9.
+keep the detected **Next.js** preset, root directory `./`, build `next build`. Node 22.x (pinned in `package.json`).
 The Blender master is intentionally not part of this repository.
 
 ## Notes
