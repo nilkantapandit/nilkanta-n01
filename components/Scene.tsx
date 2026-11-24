@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useRef } from "react";
-import { ContactShadows, Environment, Lightformer, MeshReflectorMaterial, Sparkles } from "@react-three/drei";
+import { ContactShadows, Environment, Lightformer, Sparkles } from "@react-three/drei";
 import N01Model from "./N01Model";
 import CameraRig from "./CameraRig";
 import { HotspotProjector } from "./DeviceHotspots";
@@ -30,17 +30,13 @@ export default function Scene({ resetSignal, lowPower }: Props) {
       <ambientLight intensity={light ? 0.32 : 0.1} color="#f2ece6" />
       <hemisphereLight args={["#cfd2d8", light ? "#8f8a82" : "#050505", light ? 0.55 : 0.22]} />
 
-      {/* Cinematic orange key (casts the only shadow map) */}
+      {/* Cinematic orange key (no real-time shadow map: contact shadows ground the device) */}
       <spotLight
         position={[-4.2, 5.2, 4.4]}
         angle={0.42}
         penumbra={0.85}
         intensity={50}
         color="#ffe3cf"
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.02}
       />
       {/* Orange rim from behind to separate the silhouette */}
       <spotLight position={[3.6, 2.6, -4.6]} angle={0.5} penumbra={1} intensity={110} color="#ff6414" />
@@ -63,23 +59,10 @@ export default function Scene({ resetSignal, lowPower }: Props) {
         <ModeEffects />
       </Suspense>
 
-      {/* Dark reflective presentation floor */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, FLOOR_Y, 0]} receiveShadow>
+      {/* Satin presentation floor (no mirror pass: one less full scene render per frame) */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, FLOOR_Y, 0]}>
         <planeGeometry args={[40, 40]} />
-        <MeshReflectorMaterial
-          resolution={256}
-          blur={[200, 60]}
-          mixBlur={1}
-          mixStrength={light ? 0.6 : 1.4}
-          mixContrast={1}
-          mirror={light ? 0.3 : 0.6}
-          depthScale={1.1}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.3}
-          roughness={0.9}
-          metalness={0.5}
-          color={light ? "#f3f1ec" : "#0a0909"}
-        />
+        <meshStandardMaterial color={light ? "#f3f1ec" : "#0a0909"} roughness={light ? 0.6 : 0.42} metalness={light ? 0.05 : 0.35} />
       </mesh>
       <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={light ? 0.4 : 0.55} scale={6} blur={2.4} far={1.6} resolution={256} color="#000000" />
 

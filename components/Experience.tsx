@@ -112,7 +112,7 @@ export default function Experience() {
     []
   );
   const [lowPower, setLowPower] = useState(lowPowerInitial);
-  const [dpr, setDpr] = useState<[number, number]>(lowPowerInitial ? [1, 1.25] : [1, 1.5]);
+  const [dpr, setDpr] = useState<[number, number]>(lowPowerInitial ? [1, 1] : [1, 1.25]);
   const reset = requestReset;
 
   return (
@@ -120,13 +120,12 @@ export default function Experience() {
       <div className="canvas-wrap" onDoubleClick={() => { const s = useDevice.getState(); if (!s.hoverLabel && !s.screenFocus) reset(); }}>
         <SceneErrorBoundary>
           <Canvas
-            shadows="percentage"
             dpr={dpr}
             camera={{ fov: CAMERA_FOV, near: 0.05, far: 60, position: [-2.2, 1.1, 3.4] }}
             onPointerMissed={() => clearPinned()}
             gl={{ antialias: true, stencil: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
           >
-            <PerformanceMonitor onDecline={() => { setLowPower(true); setDpr([1, 1.25]); }} />
+            <PerformanceMonitor onDecline={() => { setLowPower(true); setDpr([1, 1]); }} />
             <AdaptiveDpr pixelated={false} />
             <Scene resetSignal={resetSignal} lowPower={lowPower} />
           </Canvas>

@@ -535,7 +535,7 @@ class ScreenOS {
     if (useDevice.getState().transmitting) animating = true;
     if (animating) this.dirty = true;
     // throttle uploads to ~30 fps
-    if (this.dirty && this.t - this.lastDraw >= 1 / 30) {
+    if (this.dirty && this.t - this.lastDraw >= 1 / 20) {
       this.draw();
       this.lastDraw = this.t;
       this.dirty = false;

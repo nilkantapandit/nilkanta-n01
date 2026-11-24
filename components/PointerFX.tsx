@@ -31,6 +31,9 @@ const CLICK_MS = 600;
 export default function PointerFX() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const markerRef = useRef<HTMLDivElement>(null);
+  const hRef = useRef<HTMLDivElement>(null);
+  const vRef = useRef<HTMLDivElement>(null);
+  const coordRef = useRef<HTMLElement>(null);
   const lockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -121,11 +124,13 @@ export default function PointerFX() {
   /* ---------- tracking marker (fine pointers only), eased so it glides instead of jittering ---------- */
   useEffect(() => {
     const marker = markerRef.current!;
+    const hl = hRef.current!, vl = vRef.current!, coord = coordRef.current!;
+    let lastCoord = "";
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let shown = false, raf = 0, last = 0;
     const cur = { x: -100, y: -100 };
-    const show = (v: boolean) => { if (v !== shown) { shown = v; marker.classList.toggle("on", v); } };
+    const show = (v: boolean) => { if (v !== shown) { shown = v; marker.classList.toggle("on", v); hl.classList.toggle("on", v); vl.classList.toggle("on", v); } };
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
       const m = pointerFx.magnet;
@@ -133,6 +138,10 @@ export default function PointerFX() {
       const k = reduce.matches ? 1 : 1 - Math.exp(-dt * 32);
       cur.x += (gx - cur.x) * k; cur.y += (gy - cur.y) * k;
       marker.style.transform = `translate3d(${cur.x.toFixed(1)}px, ${cur.y.toFixed(1)}px, 0)`;
+      hl.style.transform = `translate3d(0, ${cur.y.toFixed(1)}px, 0)`;
+      vl.style.transform = `translate3d(${cur.x.toFixed(1)}px, 0, 0)`;
+      const c = `X ${String(Math.round(cur.x)).padStart(4, "0")}  Y ${String(Math.round(cur.y)).padStart(4, "0")}`;
+      if (c !== lastCoord) { coord.textContent = c; lastCoord = c; }
       if (Math.abs(gx - cur.x) + Math.abs(gy - cur.y) > 0.3 || m) raf = requestAnimationFrame(loop);
       else { raf = 0; last = 0; }
     };
@@ -184,7 +193,9 @@ export default function PointerFX() {
     <>
       <canvas ref={canvasRef} className="pulse-layer" aria-hidden="true" />
       <div ref={lockRef} className="target-lock" aria-hidden="true"><i /><i /><i /><i /></div>
-      <div ref={markerRef} className="cursor-marker" aria-hidden="true"><i /><i /><i /><i /></div>
+      <div ref={markerRef} className="cursor-marker" aria-hidden="true"><b ref={coordRef} /></div>
+      <div ref={hRef} className="cursor-hline" aria-hidden="true" />
+      <div ref={vRef} className="cursor-vline" aria-hidden="true" />
     </>
   );
 }

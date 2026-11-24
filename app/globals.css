@@ -200,31 +200,31 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 
 /* ---- pointer effects: click pulse · tracking marker · target lock ---- */
 .pulse-layer { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
-.cursor-marker { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 61; opacity: 0; transition: opacity 0.15s; --c: rgb(255, 122, 26); }
-.cursor-marker.on { opacity: 1; }
-/* reticle: four corner brackets + a thin crosshair through the centre */
-.cursor-marker::before { content: ""; position: absolute; left: -14px; top: -0.5px; width: 28px; height: 1px; background: var(--c); }
-.cursor-marker::after { content: ""; position: absolute; left: -0.5px; top: -14px; width: 1px; height: 28px; background: var(--c); }
-.cursor-marker i { position: absolute; width: 7px; height: 7px; border: 0 solid var(--c); }
-.cursor-marker i:nth-child(1) { left: -11px; top: -11px; border-left-width: 2px; border-top-width: 2px; }
-.cursor-marker i:nth-child(2) { left: 4px; top: -11px; border-right-width: 2px; border-top-width: 2px; }
-.cursor-marker i:nth-child(3) { left: 4px; top: 4px; border-right-width: 2px; border-bottom-width: 2px; }
-.cursor-marker i:nth-child(4) { left: -11px; top: 4px; border-left-width: 2px; border-bottom-width: 2px; }
+/* cursor: solid "+" with a live coordinate readout, plus dashed guide lines across the whole screen */
+.cursor-marker, .cursor-hline, .cursor-vline { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 61; opacity: 0; transition: opacity 0.15s; --c: 255, 122, 26; will-change: transform; }
+.cursor-marker { width: 0; height: 0; }
+.cursor-marker.on, .cursor-hline.on, .cursor-vline.on { opacity: 1; }
+.cursor-marker::before { content: ""; position: absolute; left: -9px; top: -1px; width: 18px; height: 2px; background: rgb(var(--c)); }
+.cursor-marker::after { content: ""; position: absolute; left: -1px; top: -9px; width: 2px; height: 18px; background: rgb(var(--c)); }
+.cursor-marker b { position: absolute; left: 12px; top: 10px; font: 500 10px/1 var(--mono); letter-spacing: 0.04em; color: rgb(var(--c)); white-space: pre; text-shadow: 0 0 3px rgba(var(--panel), 0.9); }
+.cursor-hline { width: 100vw; height: 1px; background: repeating-linear-gradient(90deg, rgba(var(--c), 0.55) 0 6px, transparent 6px 12px); }
+.cursor-vline { width: 1px; height: 100vh; background: repeating-linear-gradient(180deg, rgba(var(--c), 0.55) 0 6px, transparent 6px 12px); }
+.cursor-hline.on, .cursor-vline.on { opacity: 0.8; }
 @media (hover: hover) and (pointer: fine) { .canvas-wrap, .canvas-wrap canvas { cursor: none !important; } }
 .target-lock { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.12s; }
 .target-lock.on { opacity: 1; animation: lock-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.target-lock i { position: absolute; width: 8px; height: 8px; border: 0 solid rgba(var(--ptr), 0.9); }
-.target-lock i:nth-child(1) { left: 0; top: 0; border-left-width: 1px; border-top-width: 1px; }
-.target-lock i:nth-child(2) { right: 0; top: 0; border-right-width: 1px; border-top-width: 1px; }
-.target-lock i:nth-child(3) { right: 0; bottom: 0; border-right-width: 1px; border-bottom-width: 1px; }
-.target-lock i:nth-child(4) { left: 0; bottom: 0; border-left-width: 1px; border-bottom-width: 1px; }
+.target-lock i { position: absolute; width: 11px; height: 11px; border: 0 solid #fff; filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.35)); }
+.target-lock i:nth-child(1) { left: 0; top: 0; border-left-width: 2.5px; border-top-width: 2.5px; }
+.target-lock i:nth-child(2) { right: 0; top: 0; border-right-width: 2.5px; border-top-width: 2.5px; }
+.target-lock i:nth-child(3) { right: 0; bottom: 0; border-right-width: 2.5px; border-bottom-width: 2.5px; }
+.target-lock i:nth-child(4) { left: 0; bottom: 0; border-left-width: 2.5px; border-bottom-width: 2.5px; }
 @keyframes lock-in { from { opacity: 0; scale: 1.3; } to { opacity: 1; scale: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .target-lock.on { animation: none; }
   /* no looping / decorative CSS motion; one-shot reveals jump to their end state */
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
-.target-lock.on + .cursor-marker { opacity: 0; }
+.target-lock.on + .cursor-marker::before, .target-lock.on + .cursor-marker::after { opacity: 0; }
 
 /* light theme: TX states stay readable on the light panel */
 :root[data-theme="light"] .nm-tx, :root[data-theme="light"] .nm-tx .nm-bar,

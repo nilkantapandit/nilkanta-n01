@@ -61,8 +61,6 @@ export default function N01Model({ idle }: Props) {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
       meshes++;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
       if (raycastRole(mesh) === "none") mesh.raycast = noRaycast;
       else pickable++;
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
