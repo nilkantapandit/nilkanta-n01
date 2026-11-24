@@ -16,11 +16,33 @@ export type Project = { name: string; summary: string; tags: string[]; href?: st
 export const content = {
   handle: "nilkanta",
   name: "Nilkanta",
+  fullName: "Nilkanta Pandit",
   headline: "DevOps Engineer",
+  /** Shown next to the mascot. */
+  mascotLine: "chill, I'm here",
   currentOrg: "Viacon Marketing & Technologies",
 
-  /** TODO(nilkanta): a short first-person bio (2–4 sentences). */
-  bio: null as string | null,
+  /** First-person bio. Written from confirmed facts — TODO(nilkanta): rewrite in your own words if you like. */
+  bio: "I'm a DevOps engineer who keeps servers and websites running fast, secure and boring. I started as an IT intern in 2024, moved into cloud infrastructure and DevOps, and today I look after client websites at Viacon — WordPress and WooCommerce operations, Cloudflare security, forms and integrations, and the monthly reports clients actually read. I automate the repetitive parts with Bash, Python, Docker and GitHub Actions, and in my spare time I design hardware like the N-01 you're holding." as string | null,
+  /** "At a glance" rows on the ABOUT page. */
+  glance: [
+    ["Role", "DevOps Engineer · Viacon Marketing & Technologies"],
+    ["In IT since", "2024 (intern → associate → engineer)"],
+    ["Focus", "DevOps · web operations · website security"],
+    ["Stack", "Linux · Docker · GitHub Actions · Nginx · Cloudflare · WordPress"],
+  ] as [string, string][],
+  /** What I do — CV-style highlights (no qualifications, by request). */
+  whatIDo: [
+    "Keep client websites healthy — WordPress / WooCommerce maintenance, staging sites and hosting moves (incl. managed hosts like Kinsta)",
+    "Harden security — Content-Security-Policy and security headers through Cloudflare; clean-up of compromised sites",
+    "Wire up forms & integrations — Gravity Forms lead routing, HubSpot → Gravity Forms migrations, cookie-consent (Cookiebot) fixes, multilingual sites (WPML)",
+    "Automate — Bash server-setup scripts, a Flask maintenance-report generator, Dockerised apps built by GitHub Actions CI",
+    "Write it up — proposals, hosting comparisons, incident and technical reports for clients",
+  ],
+  offTheClock: [
+    "Designing the NILKANTA N-01 cyberdeck in Blender",
+    "Building this site — Next.js, React Three Fiber, Three.js",
+  ],
   /** Facts shown under "about" even before the bio is written. */
   aboutFacts: [
     "DevOps Engineer at Viacon Marketing & Technologies (since Nov 2025)",
@@ -80,11 +102,17 @@ export const content = {
   experience: [
     {
       title: "DevOps Engineer", org: "Viacon Marketing & Technologies", period: "Nov 2025 – present",
-      notes: ["WordPress site management and maintenance for client websites", "Security remediation and security-header hardening", "Monthly maintenance reports, proposals and hosting comparisons"],
+      notes: [
+        "Run and maintain a portfolio of client WordPress / WooCommerce websites, including staging sites and managed hosting (Kinsta)",
+        "Security remediation: CSP / security-header hardening behind Cloudflare, clean-up of compromised sites, incident write-ups",
+        "Forms and integrations: Gravity Forms lead routing, HubSpot → Gravity Forms migrations, Cookiebot consent fixes, WPML multilingual sites",
+        "Built my own Flask app that generates the monthly client maintenance reports (.docx)",
+        "Client-facing deliverables: proposals, hosting comparisons, technical reports, site handovers",
+      ],
     },
     {
       title: "DevOps, Cloud Infrastructure & IT Associate", org: "Sourcedesk Global", period: "Aug 2024 – Oct 2025",
-      notes: ["DevOps, cloud infrastructure and IT operations"],
+      notes: ["DevOps, cloud infrastructure and IT operations"], // TODO(nilkanta): add CV bullet points for this role
     },
     { title: "IT Intern", org: "Sourcedesk Global", period: "Mar 2024 – Jul 2024" },
   ] as Role[],

@@ -9,6 +9,8 @@ import { MODEL_SCALE, MODEL_URL } from "@/lib/config";
 import { deckOf, useDevice } from "@/lib/store";
 import { CONTROL_NODES, NO_RAYCAST_NODES, OCCLUDER_NODES } from "@/lib/controls";
 import { initDeviceMaterials, prepareControlMaterials, setShellTheme } from "@/lib/deviceMaterials";
+import { setupLeds } from "@/lib/deviceLeds";
+import { fixBackArrow } from "@/lib/deviceIcons";
 import { useControlHandlers } from "./DeviceControls";
 
 const noRaycast: THREE.Object3D["raycast"] = () => {};
@@ -74,6 +76,8 @@ export default function N01Model({ idle }: Props) {
         }
       }
     });
+    fixBackArrow(scene);
+    setupLeds(scene);
     prepareControlMaterials(scene, [
       "N01_Btn_Cancel", "N01_Btn_Menu", "N01_Btn_Power", "N01_Btn_Fullscreen", "N01_Btn_Confirm",
       "N01_Back_Button", "N01_Nav_Center_Button", "N01_Nav_Wheel",

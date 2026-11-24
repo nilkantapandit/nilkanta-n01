@@ -57,7 +57,7 @@ export function initDeviceMaterials(root: THREE.Object3D) {
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const m of mats) {
       const sm = m as THREE.MeshStandardMaterial;
-      if (!sm.isMeshStandardMaterial || seen.has(sm)) continue;
+      if (!sm.isMeshStandardMaterial || seen.has(sm) || sm.userData.n01Led) continue;
       seen.add(sm);
       if (sm.emissive && sm.emissive.r + sm.emissive.g + sm.emissive.b > 0.001) {
         const list = entries.get(sm.name) ?? [];

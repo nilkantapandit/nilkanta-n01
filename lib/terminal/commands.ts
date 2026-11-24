@@ -36,17 +36,33 @@ registerCommand({
   run: () => [accent(content.handle), out(`${content.name} — ${content.headline} at ${content.currentOrg}`)],
 });
 
+/** CV-style "about me" (shared by the terminal and the ABOUT screen app). */
+export function aboutLines(): Line[] {
+  return [
+    accent(`${content.fullName} — ${content.headline}`),
+    dim(content.currentOrg),
+    blank(),
+    ...(content.bio ? [out(content.bio), blank()] : soon("bio")),
+    ...section("AT A GLANCE"),
+    ...content.glance.map(([k, v]) => out(`${k.padEnd(12)}${v}`)),
+    blank(),
+    ...section("WHAT I DO"),
+    ...content.whatIDo.map((w) => out(`▸ ${w}`)),
+    blank(),
+    ...section("OFF THE CLOCK"),
+    ...content.offTheClock.map((w) => out(`▸ ${w}`)),
+    ...(content.location ? [blank(), dim(content.location)] : []),
+    blank(),
+    dim("more: experience · skills · projects · contact"),
+  ];
+}
+
 registerCommand({
   name: "about",
-  description: "About Nilkanta",
+  description: "About Nilkanta (CV-style)",
   menu: true,
-  run: () => [
-    ...section("ABOUT"),
-    ...(content.bio ? [out(content.bio), blank()] : []),
-    ...content.aboutFacts.map((f) => out(`• ${f}`)),
-    ...(content.location ? [blank(), dim(content.location)] : []),
-    ...(content.bio ? [] : [blank(), ...soon("full bio")]),
-  ],
+  aliases: ["cv", "resume", "me"],
+  run: () => [...section("ABOUT ME"), ...aboutLines()],
 });
 
 registerCommand({
@@ -417,5 +433,130 @@ registerCommand({
       return [accent("✔ vault unlocked"), out("Maker's note: thanks for poking around. The N-01 started as a sketch"), out("and became this site one component at a time. Say hi — try `contact`.")];
     }
     return [err("✖ access denied"), dim("hint: decode the hex as ASCII")];
+  },
+});
+
+
+/* ------------------------------------------------------------------ DevOps cheat sheets */
+const DOCS: { key: string; title: string; href: string }[] = [
+  { key: "actions", title: "GitHub Actions — workflow syntax (.github/workflows/*.yml)", href: "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax" },
+  { key: "gitlab", title: "GitLab CI/CD — .gitlab-ci.yml syntax reference", href: "https://docs.gitlab.com/ci/yaml/" },
+  { key: "compose", title: "Docker Compose — compose.yaml file reference", href: "https://docs.docker.com/reference/compose-file/" },
+  { key: "dockerfile", title: "Dockerfile reference", href: "https://docs.docker.com/reference/dockerfile/" },
+  { key: "docker", title: "docker CLI reference", href: "https://docs.docker.com/reference/cli/docker/" },
+  { key: "k8s", title: "Kubernetes — objects & YAML manifests", href: "https://kubernetes.io/docs/concepts/overview/working-with-objects/" },
+  { key: "kubectl", title: "kubectl quick reference", href: "https://kubernetes.io/docs/reference/kubectl/quick-reference/" },
+  { key: "terraform", title: "Terraform — configuration language", href: "https://developer.hashicorp.com/terraform/language" },
+  { key: "tfcli", title: "Terraform CLI commands", href: "https://developer.hashicorp.com/terraform/cli/commands" },
+];
+
+const rows = (r: [string, string][]): Line[] => r.flatMap(([c, d]) => [out(`  $ ${c}`), dim(`      # ${d}`)]);
+const docLinks = (keys: string[]): Line[] => [blank(), accent("docs"), ...keys.map((k) => { const i = DOCS.findIndex((d) => d.key === k); const d = DOCS[i]; return link(`  [${i + 1}] ${d.title}`, d.href); }), dim("  open <n> — opens that page in a new tab")];
+
+const CHEATS: Record<string, { title: string; lines: () => Line[] }> = {
+  docker: { title: "DOCKER", lines: () => [
+    ...rows([
+      ["docker ps -a", "all containers (running + stopped)"],
+      ["docker images", "local images"],
+      ["docker build -t app:1.0 .", "build from ./Dockerfile"],
+      ["docker run -d -p 8080:80 --name web nginx", "run detached, host 8080 → 80"],
+      ["docker logs -f web", "follow logs"],
+      ["docker exec -it web sh", "shell inside the container"],
+      ["docker stop web && docker rm web", "stop and remove"],
+      ["docker system prune -a", "remove unused data (careful)"],
+      ["docker compose up -d", "start the compose stack"],
+      ["docker compose logs -f", "stack logs"],
+      ["docker compose down", "stop and remove the stack"],
+    ]),
+    ...docLinks(["docker", "dockerfile", "compose"]),
+  ] },
+  kubectl: { title: "KUBERNETES (kubectl)", lines: () => [
+    ...rows([
+      ["kubectl get pods -A", "pods in every namespace"],
+      ["kubectl get deploy,svc -n <ns>", "deployments + services"],
+      ["kubectl describe pod <pod>", "events, why it's not starting"],
+      ["kubectl logs -f <pod> [-c <ctr>]", "follow container logs"],
+      ["kubectl exec -it <pod> -- sh", "shell into a pod"],
+      ["kubectl apply -f app.yaml", "create / update from a manifest"],
+      ["kubectl delete -f app.yaml", "delete what the manifest made"],
+      ["kubectl rollout status deploy/<d>", "watch a rollout"],
+      ["kubectl rollout undo deploy/<d>", "roll back"],
+      ["kubectl scale deploy/<d> --replicas=3", "scale"],
+      ["kubectl port-forward svc/<s> 8080:80", "reach a service locally"],
+      ["kubectl config use-context <ctx>", "switch cluster"],
+    ]),
+    ...docLinks(["kubectl", "k8s"]),
+  ] },
+  terraform: { title: "TERRAFORM", lines: () => [
+    ...rows([
+      ["terraform init", "download providers, set up backend"],
+      ["terraform fmt -recursive", "format .tf files"],
+      ["terraform validate", "check the configuration"],
+      ["terraform plan -out tfplan", "preview changes, save the plan"],
+      ["terraform apply tfplan", "apply exactly that plan"],
+      ["terraform destroy", "tear everything down (careful)"],
+      ["terraform state list", "resources in state"],
+      ["terraform output", "show outputs"],
+      ["terraform workspace new <name>", "separate state per env"],
+      ["terraform import <addr> <id>", "adopt an existing resource"],
+    ]),
+    ...docLinks(["terraform", "tfcli"]),
+  ] },
+  yaml: { title: "YAML — CI WORKFLOWS & MANIFESTS", lines: () => [
+    dim("  GitHub Actions: save as .github/workflows/ci.yml"),
+    ...[
+      "name: ci",
+      "on: [push, pull_request]",
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v7",
+      "      - run: docker build -t app:${{ github.sha }} .",
+    ].map((l) => pre(`    ${l}`)),
+    blank(),
+    dim("  rules: 2-space indent, no tabs · '-' starts a list item · key: value"),
+    ...docLinks(["actions", "gitlab", "compose", "k8s"]),
+  ] },
+};
+const TOPIC_ALIAS: Record<string, string> = { k8s: "kubectl", kubernetes: "kubectl", kube: "kubectl", tf: "terraform", compose: "docker", yml: "yaml", workflow: "yaml", workflows: "yaml", actions: "yaml", ci: "yaml" };
+
+registerCommand({
+  name: "cheat",
+  description: "Cheat sheets: docker · kubectl · terraform · yaml",
+  aliases: ["cheatsheet", "tldr"],
+  run: (ctx) => {
+    const t = (ctx.args[0] ?? "").toLowerCase();
+    const key = CHEATS[t] ? t : TOPIC_ALIAS[t];
+    if (!key) return [
+      ...section("CHEAT SHEETS"),
+      ...Object.entries(CHEATS).map(([k, c]) => out(`  cheat ${k.padEnd(11)}${c.title.toLowerCase()}`)),
+      blank(),
+      dim("official docs for all of them: docs"),
+    ];
+    return [...section(`CHEAT · ${CHEATS[key].title}`), ...CHEATS[key].lines()];
+  },
+});
+
+registerCommand({
+  name: "docs",
+  description: "Official docs: workflows, compose, k8s, terraform",
+  run: () => [
+    ...section("OFFICIAL DOCUMENTATION"),
+    ...DOCS.map((d, i) => link(`  [${i + 1}] ${d.title}`, d.href)),
+    blank(),
+    dim("open <n> — opens that page in a new tab"),
+  ],
+});
+
+registerCommand({
+  name: "open",
+  description: "Open a docs link: open <n>",
+  run: (ctx) => {
+    const a = (ctx.args[0] ?? "").toLowerCase();
+    const d = DOCS[Number(a) - 1] ?? DOCS.find((x) => x.key === a);
+    if (!d) return [err("usage: open <n> — see: docs"), dim(DOCS.map((x, i) => `${i + 1}:${x.key}`).join("  "))];
+    if (typeof window !== "undefined") window.open(d.href, "_blank", "noopener");
+    return [sys(`opening ${d.href}`)];
   },
 });

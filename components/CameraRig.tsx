@@ -38,7 +38,7 @@ export default function CameraRig({ resetSignal, idle }: Props) {
   const first = useRef(true);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") Object.assign(window, { __n01cam: camera, __gsap: gsap });
+    if (process.env.NODE_ENV !== "production") Object.assign(window, { __n01cam: camera, __gsap: gsap, __n01ctl: () => controls.current });
   }, [camera]);
 
   // Initial framing (and re-framing on resize until the user takes control).

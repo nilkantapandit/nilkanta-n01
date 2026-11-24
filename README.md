@@ -67,6 +67,9 @@ registerCommand({ name: "hello", description: "Say hi", menu: true, run: () => [
   the panel stays as a status monitor (channel / signal / TX, or session / cipher / uptime).
   Push-to-talk (panel button or hold Space, FIELD_COMMS only) shows TX ACTIVE / STANDBY on both.
 - **Field manual:** a plain-language how-to drawn as a hologram panel in the 3D scene, beside the device (above it on phones): device wireframe with numbered controls, quick start, mouse/keyboard basics. It stays put when you zoom, turns with the view, and the device hides what is behind it. On by default; `guide` button or `?` key shows / hides it (remembered).
+- **Status LEDs & battery:** ETH0 / ETH1 / Wi-Fi / LINK and the rear jack LEDs blink with simulated traffic (Wi-Fi off in SECURE, fast while transmitting); on boot they run a self-test (chase → lamp test → latch on) while the green battery gauge fills. Split out of the GLB meshes at runtime.
+- **About me:** `ABOUT ME` screen app and `about` / `cv` command, with a pixel mascot ("chill, I'm here"). Text lives in `lib/content.ts`.
+- **Cheat sheets:** `cheat docker|kubectl|terraform|yaml`, `docs` for the official references, `open <n>` to open one.
   All of it is a visual simulation: nothing is transmitted or encrypted.
 - **Colours** — two independent toggles: `light` (background + interface) and `white-deck` (device shell +
   screen: white Flipper-style shell with an orange LCD, or charcoal with the amber CRT). Any combination works;

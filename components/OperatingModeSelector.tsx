@@ -6,6 +6,7 @@ import type * as THREE from "three";
 import gsap from "gsap";
 import { CHANNEL, useDevice } from "@/lib/store";
 import { setModeTarget, setTransmitGlow, updateDeviceMaterials } from "@/lib/deviceMaterials";
+import { ledState, updateLeds } from "@/lib/deviceLeds";
 import { deviceAudio } from "@/lib/deviceAudio";
 
 /* ================================================================ in-canvas part */
@@ -34,8 +35,9 @@ export function ModeEffects() {
   }, [mode]);
 
   useEffect(() => { setTransmitGlow(transmitting); }, [transmitting]);
+  useEffect(() => { if (process.env.NODE_ENV !== "production") (window as unknown as { __n01leds?: unknown }).__n01leds = ledState; }, []);
 
-  useFrame((state, dt) => updateDeviceMaterials(state.clock.elapsedTime, Math.min(dt, 0.1)));
+  useFrame((state, dt) => { updateDeviceMaterials(state.clock.elapsedTime, Math.min(dt, 0.1)); updateLeds(state.clock.elapsedTime, Math.min(dt, 0.1)); });
   return null;
 }
 

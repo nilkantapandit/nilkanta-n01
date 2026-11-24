@@ -10,7 +10,7 @@
 import { deckOf, useDevice, type TerminalSession, type Notice } from "@/lib/store";
 import { content, COMING_SOON } from "@/lib/content";
 import { complete, runCommand, type Line } from "@/lib/terminal/registry";
-import { welcomeLines } from "@/lib/terminal/commands";
+import { aboutLines, welcomeLines } from "@/lib/terminal/commands";
 import { BANNER } from "@/lib/terminal/banner";
 import { deviceAudio } from "@/lib/deviceAudio";
 import { flashControl, setPowerLevel } from "@/lib/deviceMaterials";
@@ -19,10 +19,11 @@ export const SCREEN_W = 1280;
 export const SCREEN_H = 853;
 
 export type Phase = "off" | "booting" | "online" | "shutdown";
-export type AppId = "menu" | "system" | "devops" | "projects" | "security" | "arcade" | "contact" | "terminal" | "secret" | "matrix";
+export type AppId = "menu" | "about" | "system" | "devops" | "projects" | "security" | "arcade" | "contact" | "terminal" | "secret" | "matrix";
 export type Dir = "up" | "down" | "left" | "right";
 
 export const APPS: { id: AppId; label: string; blurb: string }[] = [
+  { id: "about", label: "ABOUT ME", blurb: "Who Nilkanta is" },
   { id: "system", label: "SYSTEM", blurb: "Device status, controls and modes" },
   { id: "devops", label: "DEVOPS", blurb: "Experience and skills" },
   { id: "projects", label: "PROJECTS", blurb: "Selected work" },
@@ -63,7 +64,7 @@ const BIOS = [
   "PORTS     ETH0 ETH1 HDMI USB-C USB-A AUDIO .... OK",
   "MODE SW   FIELD COMMS / SECURE ................ OK",
 ];
-const CHECKS = ["DISPLAY SELF-TEST", "INPUT MATRIX", "NETWORK LINKS (SIM)"];
+const CHECKS = ["DISPLAY SELF-TEST", "INPUT MATRIX", "STATUS LEDS · BATTERY", "NETWORK LINKS (SIM)"];
 const LINUX = [
   "[  OK  ] Started N-01 display service.",
   "[  OK  ] Reached target Input Devices.",
@@ -97,6 +98,9 @@ class ScreenOS {
   sel = 0;
   private level = 0;            // backlight 0..1
   private bootT = 0;
+  /** Seconds since boot / shutdown started (drives the LED self-test). */
+  get bootClock() { return this.bootT; }
+  get shutClock() { return this.shutT; }
   private flicker = 0;          // short flicker after transitions
   private t = 0;
   private lastDraw = 0;
@@ -392,6 +396,10 @@ class ScreenOS {
     const run = async (c: string) => runCommand(c, { print: () => {}, clear: () => {}, close: () => {}, device: useDevice.getState() });
     let lines: PageLine[] = [];
     switch (id) {
+      case "about":
+        this.pageTitle = "ABOUT ME";
+        lines = aboutLines();
+        break;
       case "system":
         this.pageTitle = "SYSTEM";
         lines = [...(await run("neofetch")), { kind: "out", text: "" },
@@ -516,6 +524,7 @@ class ScreenOS {
       if (this.app === "arcade") { this.snake.acc += dt; while (this.snake.acc > 0.13) { this.snake.acc -= 0.13; this.stepSnake(); } animating = true; }
       if (this.app === "matrix") { this.matrixT += dt; animating = true; if (this.matrixT > 12) this.menu(); }
       if (this.app === "terminal" && Math.floor(this.t * 2) !== Math.floor((this.t - dt) * 2)) this.dirty = true;  // cursor blink
+      if ((this.app === "menu" || this.app === "about") && (Math.floor(this.t * 1.5) !== Math.floor((this.t - dt) * 1.5) || (this.t % 4.2 < 0.14) !== ((this.t - dt) % 4.2 < 0.14))) this.dirty = true; // mascot
       if (useDevice.getState().mode === "secure" && Math.floor(this.t) !== Math.floor(this.t - dt)) this.dirty = true; // lock blink
       if (Math.floor(this.t / 20) !== Math.floor((this.t - dt) / 20)) this.dirty = true; // clock
     }
@@ -778,11 +787,13 @@ class ScreenOS {
     this.text(g, a.blurb, 596, 222, C.AMBER, 26);
     const preview = this.preview(a.id);
     preview.forEach((l, i) => this.text(g, l, 596, 300 + i * 40, i === 0 ? C.BRIGHT : C.DIM, 26));
+    this.drawMascot(g, 1100, 540, 7);
     this.text(g, "✓ CONFIRM / CENTRE  ▶  OPEN", 596, 700, C.AMBER, 22, true, false);
     this.footer(g, "WHEEL / SWIPE  move   ·   ✓ open   ·   ✕ exit screen   ·   ⏻ power off");
   }
   private preview(id: AppId): string[] {
     switch (id) {
+      case "about": return [content.fullName, content.headline, content.currentOrg];
       case "system": return ["NILKANTA N-01 (concept)", `mode: ${useDevice.getState().mode === "secure" ? "SECURE" : "FIELD COMMS"} (simulated)`, "controls · ports · uptime"];
       case "devops": return [`${content.experience[0].title}`, content.experience[0].org, content.experience[0].period];
       case "projects": return [content.projects[0]?.name ?? COMING_SOON, ...(content.projects[0] ? this.wrap([{ kind: "out", text: content.projects[0].summary }], 34).slice(0, 3).map((l) => l.text) : [])];
@@ -800,6 +811,7 @@ class ScreenOS {
       g.fillStyle = C.AMBER; g.fillRect(36, 84, SCREEN_W - 72, 40);
       this.text(g, this.banner, 52, 113, C.INV, 24, true, false);
     }
+    if (this.app === "about" && this.scroll === 0) this.drawMascot(g, 1060, 96, 6);
     const y0 = PAGE_Y0 + (this.banner ? 30 : 0);
     const rows = PAGE_ROWS - (this.banner ? 1 : 0);
     const items = this.page.map((l, i) => (l.item ? i : -1)).filter((i) => i >= 0);
@@ -817,6 +829,34 @@ class ScreenOS {
       g.fillStyle = C.AMBER; g.fillRect(SCREEN_W - 22, top, 6, h);
     }
     this.footer(g, items.length ? "WHEEL / SWIPE  select   ·   ✓ open link   ·   ✕ back" : "WHEEL / SWIPE  scroll   ·   ✕ back   ·   ≡ menu");
+  }
+
+  /** Pixel mascot (a tiny Nilkanta in headphones) with a speech bubble. Blinks now and then. */
+  private drawMascot(g: CanvasRenderingContext2D, x: number, y: number, px: number) {
+    const blink = (this.t % 4.2) < 0.14;
+    const bob = Math.floor(this.t * 1.5) % 2 === 0 && !reducedMotion() ? 0 : px * 0.5;
+    const pal: Record<string, string> = { h: C.AMBER, k: C.AMBER, s: C.FAINT, e: C.PALE, m: C.AMBER, p: C.BRIGHT, o: C.DIM, z: C.AMBER };
+    MASCOT.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        let ch = row[c];
+        if (ch === ".") continue;
+        if (ch === "e" && blink) ch = "k";
+        g.fillStyle = pal[ch] ?? C.AMBER;
+        const yy = y + r * px + (r < 11 ? bob : 0);
+        if (ch === "e" && blink) g.fillRect(x + c * px, yy + px * 0.4, px, px * 0.3);
+        else g.fillRect(x + c * px, yy, px, px);
+      }
+    });
+    // speech bubble to the left
+    const msg = content.mascotLine;
+    g.font = font(Math.round(px * 3.4), true);
+    const w = g.measureText(msg).width + px * 4, h = px * 6;
+    const bx = x - w - px * 2, by = y + px;
+    g.fillStyle = C.PANEL; g.fillRect(bx, by, w, h);
+    g.strokeStyle = C.AMBER; g.lineWidth = 2; g.strokeRect(bx + 1, by + 1, w - 2, h - 2);
+    g.beginPath(); g.moveTo(bx + w - 1, by + h * 0.35); g.lineTo(bx + w + px * 1.6, by + h * 0.55); g.lineTo(bx + w - 1, by + h * 0.7); g.closePath();
+    g.fillStyle = C.PANEL; g.fill(); g.stroke();
+    this.text(g, msg, bx + px * 2, by + h * 0.68, C.PALE, Math.round(px * 3.4), true, false);
   }
 
   private drawTerminal(g: CanvasRenderingContext2D) {
@@ -891,9 +931,31 @@ class ScreenOS {
 }
 
 /* layout constants */
-const MENU_Y0 = 104, MENU_ROW = 90;
+const MENU_Y0 = 100, MENU_ROW = 82;
 const PAGE_Y0 = 92, PAGE_ROW = 40, PAGE_FONT = 27, PAGE_ROWS = 16;
 const GRID_W = 26, GRID_H = 14, CELL = 44;
+
+/** 16 × 18 pixel avatar: h hair · s skin · e eyes · m mouth · p headphones · o hoodie · z zip. */
+const MASCOT = [
+  "....hhhhhhhh....",
+  "...hhhhhhhhhhh..",
+  "..hhhhhhhhhhhhh.",
+  "..hhhhhhhhhhhhh.",
+  ".pphsssssssssspp",
+  ".pphsssssssssspp",
+  ".ppsseessseessp.",
+  ".ppsseessseessp.",
+  "..pssssssssssp..",
+  "...sssmssssms...",
+  "....sssmmmmss...",
+  ".....ssssssss...",
+  "...oooooooooooo.",
+  "..oooooooooooooo",
+  ".ooooooozzoooooo",
+  ".ooo.oooozooo.oo",
+  ".ooo.ooooooooo.o",
+  ".ooo.ooooooooo.o",
+];
 
 const SECRET: { label: string; run: (os: ScreenOS) => void }[] = [
   { label: "Diagnostic mode", run: () => useDevice.getState().openOverlay("diagnostics") },
