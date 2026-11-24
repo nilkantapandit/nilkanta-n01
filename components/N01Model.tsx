@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { MODEL_SCALE, MODEL_URL } from "@/lib/config";
 import { useDevice } from "@/lib/store";
 import { CONTROL_NODES, NO_RAYCAST_NODES, OCCLUDER_NODES } from "@/lib/controls";
-import { initDeviceMaterials, prepareControlMaterials } from "@/lib/deviceMaterials";
+import { initDeviceMaterials, prepareControlMaterials, setShellTheme } from "@/lib/deviceMaterials";
 import { useControlHandlers } from "./DeviceControls";
 
 const noRaycast: THREE.Object3D["raycast"] = () => {};
@@ -50,6 +50,7 @@ export default function N01Model({ idle }: Props) {
   const handlers = useControlHandlers();
   /** Extra idle damping: motion pauses while the visitor is aiming at / reading something. */
   const attention = useRef(1);
+  const swayT = useRef(0);
 
   const report = useMemo(() => {
     let meshes = 0;
@@ -83,6 +84,10 @@ export default function N01Model({ idle }: Props) {
     return { meshes, pickable, emissive, materials: materials.size, anisoFixed: [...anisoFixed] };
   }, [scene]);
 
+  // light theme → Flipper-white shell (runtime colour swap, reversible)
+  const light = useDevice((s) => s.theme === "light");
+  useEffect(() => { setShellTheme(scene, light); }, [scene, light]);
+
   const setModelRoot = useDevice((s) => s.setModelRoot);
   useEffect(() => {
     setModelRoot(scene);
@@ -100,18 +105,21 @@ export default function N01Model({ idle }: Props) {
   useFrame((state, delta) => {
     const g = sway.current;
     if (!g) return;
-    const t = state.clock.elapsedTime;
     const s = useDevice.getState();
     const busy = !!(s.hoveredHotspot || s.pinnedHotspot || s.hoverLabel || s.screenFocus || s.overlay !== "none" || s.freezeIdle || pointerFx.nearDevice || calmMotion());
     attention.current += ((busy ? 0 : 1) - attention.current) * (1 - Math.exp(-delta * (busy ? 6 : 1.2)));
     const w = idle.current * attention.current;
-    // Slow, subtle presentation sway + float; eases toward rest while the user drags.
-    const targetY = Math.sin(t * 0.22) * 0.38 * w;
-    const targetX = Math.sin(t * 0.17 + 1.3) * 0.045 * w;
+    // Slow presentation sway + float. Interaction *pauses* the sway clock instead of easing the
+    // device back to its rest pose, so it holds whatever angle it is at (it never swings round to
+    // face the camera when the screen or a key is used).
+    swayT.current += delta * w;
+    const st = swayT.current;
+    const targetY = Math.sin(st * 0.22) * 0.38;
+    const targetX = Math.sin(st * 0.17 + 1.3) * 0.045;
     const k = 1 - Math.exp(-delta * 2.2);
     g.rotation.y += (targetY - g.rotation.y) * k;
     g.rotation.x += (targetX - g.rotation.x) * k;
-    g.position.y = Math.sin(t * 0.6) * 0.025 * w;
+    g.position.y = Math.sin(st * 0.6) * 0.025;
   });
 
   return (

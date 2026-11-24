@@ -67,8 +67,8 @@ export default function Scene({ resetSignal, lowPower }: Props) {
       <mesh rotation-x={-Math.PI / 2} position={[0, FLOOR_Y, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <MeshReflectorMaterial
-          resolution={lowPower ? 256 : 512}
-          blur={[300, 80]}
+          resolution={256}
+          blur={[200, 60]}
           mixBlur={1}
           mixStrength={light ? 0.6 : 1.4}
           mixContrast={1}
@@ -81,10 +81,10 @@ export default function Scene({ resetSignal, lowPower }: Props) {
           color={light ? "#f3f1ec" : "#0a0909"}
         />
       </mesh>
-      <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={light ? 0.4 : 0.55} scale={6} blur={2.4} far={1.6} resolution={lowPower ? 256 : 512} color="#000000" />
+      <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={light ? 0.4 : 0.55} scale={6} blur={2.4} far={1.6} resolution={256} color="#000000" />
 
       {/* Subtle atmospheric particles */}
-      <Sparkles count={lowPower ? 40 : 80} scale={[9, 4, 9]} position={[0, 0.8, 0]} size={1.8} speed={calm ? 0 : 0.22} noise={calm ? 0 : 0.6} opacity={light ? 0.5 : 0.35} color={light ? "#e8700a" : "#ff8a3d"} />
+      <Sparkles count={lowPower ? 30 : 50} scale={[9, 4, 9]} position={[0, 0.8, 0]} size={1.8} speed={calm ? 0 : 0.22} noise={calm ? 0 : 0.6} opacity={light ? 0.5 : 0.35} color={light ? "#e8700a" : "#ff8a3d"} />
 
       {/* Faint coordinate grid / node graph, stencilled so it stays behind the device */}
       <AmbientGraph lowPower={lowPower} />

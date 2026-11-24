@@ -132,3 +132,29 @@ export function updateDeviceMaterials(t: number, dt: number) {
     });
   }
 }
+
+/* ------------------------------------------------------------------ light shell (theme) */
+/**
+ * Light theme: the charcoal shell turns Flipper-white at runtime (orange parts, keys, bezel and
+ * LEDs keep their colours). Original colours are kept on each material, so switching back is exact.
+ * The GLB itself is never modified.
+ */
+const SHELL_LIGHT: Record<string, string> = {
+  N01_Mat_Chassis_Charcoal: "#e8e6e1",
+  N01_Mat_Brushed_Dark_Metal: "#cfccc6",
+  N01_Mat_Corner_Rubber: "#b9b6b0",
+  N01_Mat_Label_Grey: "#4a4b4f",
+};
+export function setShellTheme(root: THREE.Object3D, light: boolean) {
+  root.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    if (!m) return;
+    for (const mat of Array.isArray(m) ? m : [m]) {
+      const target = SHELL_LIGHT[mat.name];
+      const std = mat as THREE.MeshStandardMaterial;
+      if (!target || !std.color) continue;
+      if (!std.userData.n01BaseColor) std.userData.n01BaseColor = std.color.getHex();
+      std.color.set(light ? target : std.userData.n01BaseColor);
+    }
+  });
+}

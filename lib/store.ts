@@ -104,6 +104,9 @@ type DeviceState = {
   /** Bumping this asks the camera rig to glide back to the hero view. */
   resetSignal: number;
   requestReset: () => void;
+  /** Bumping this asks the camera rig to turn the view square-on to the device screen. */
+  faceScreenSignal: number;
+  requestFaceScreen: () => void;
 };
 
 export const useDevice = create<DeviceState>((set, get) => ({
@@ -215,6 +218,8 @@ export const useDevice = create<DeviceState>((set, get) => ({
 
   resetSignal: 0,
   requestReset: () => set({ resetSignal: get().resetSignal + 1 }),
+  faceScreenSignal: 0,
+  requestFaceScreen: () => set({ faceScreenSignal: get().faceScreenSignal + 1 }),
 }));
 
 // Development-only handle for automated browser tests (stripped from production builds' behaviour).

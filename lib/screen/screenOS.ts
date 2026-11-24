@@ -281,7 +281,7 @@ class ScreenOS {
       default: {
         const items = this.page.filter((l) => l.item);
         const it = items[this.itemSel];
-        if (it?.href) { window.open(it.href, it.href.startsWith("mailto:") ? "_self" : "_blank", "noopener"); deviceAudio.play("confirm"); }
+        if (it?.href) { window.open(it.href, /^(mailto|tel):/.test(it.href) ? "_self" : "_blank", "noopener"); deviceAudio.play("confirm"); }
       }
     }
   }
@@ -393,6 +393,7 @@ class ScreenOS {
           { kind: "dim", text: content.currentOrg },
           { kind: "out", text: "" },
           ...c.links.map((l) => ({ kind: "link" as const, text: `${l.label.padEnd(10)}${l.href.replace("https://", "")}`, href: l.href, item: true })),
+          c.phone ? { kind: "link" as const, text: `${"Phone".padEnd(10)}${c.phone}`, href: `tel:${c.phone.replace(/\s/g, "")}`, item: true } : { kind: "dim" as const, text: `${"Phone".padEnd(10)}${COMING_SOON}` },
           c.email ? { kind: "link" as const, text: `${"Email".padEnd(10)}${c.email}`, href: `mailto:${c.email}`, item: true } : { kind: "dim" as const, text: `${"Email".padEnd(10)}${COMING_SOON}` },
           c.linkedin ? { kind: "link" as const, text: `${"LinkedIn".padEnd(10)}${c.linkedin.replace("https://", "")}`, href: c.linkedin, item: true } : { kind: "dim" as const, text: `${"LinkedIn".padEnd(10)}${COMING_SOON}` },
           { kind: "out", text: "" },
@@ -703,7 +704,7 @@ class ScreenOS {
       case "projects": return [content.projects[0]?.name ?? COMING_SOON, ...(content.projects[0] ? this.wrap([{ kind: "out", text: content.projects[0].summary }], 34).slice(0, 3).map((l) => l.text) : [])];
       case "security": return this.wrap([{ kind: "out", text: content.security[0] }], 34).map((l) => l.text).slice(0, 4);
       case "arcade": return ["snake · wheel / swipe to steer", `best this session: ${this.snake.best}`];
-      case "contact": return [content.contact.links[0]?.href.replace("https://", "") ?? COMING_SOON, `email: ${content.contact.email ?? "coming soon"}`];
+      case "contact": return [content.contact.links[0]?.href.replace("https://", "") ?? COMING_SOON, `email: ${content.contact.email ?? "coming soon"}`, ...(content.contact.phone ? [`phone: ${content.contact.phone}`] : [])];
       case "terminal": return ["type commands on this screen", "help · whoami · skills · projects", "experience · security · contact"];
       default: return [];
     }

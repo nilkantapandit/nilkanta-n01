@@ -32,26 +32,60 @@ export const content = {
   location: null as string | null,
 
   skills: [
-    { group: "DevOps & infrastructure", items: ["DevOps practices", "Cloud infrastructure", "IT operations & support"] },
-    { group: "Web operations", items: ["WordPress site management", "Website security remediation", "Client technical reporting"] },
+    { group: "DevOps & infrastructure", items: ["Containers — Docker, Docker Compose", "CI with GitHub Actions", "Linux server setup — Nginx, Bash automation", "Cloud infrastructure & IT operations"] },
+    { group: "Web operations", items: ["WordPress site management & maintenance", "Website security remediation & security headers", "Automated client maintenance reports"] },
     { group: "3D & design", items: ["Blender modelling (N-01 concept)"] },
   ],
-  /** TODO(nilkanta): specific tools/platforms you want listed (e.g. Linux, Docker, AWS, Cloudflare…). */
-  toolbox: null as string[] | null,
+  toolbox: ["Linux", "Bash", "Docker", "Docker Compose", "GitHub Actions", "Nginx", "Python / Flask", "WordPress", "Cloudflare"] as string[] | null,
 
   projects: [
     {
       name: "NILKANTA N-01",
       summary: "Rugged portable Linux cyberdeck concept — industrial design, Blender model and this interactive Three.js website.",
-      tags: ["concept", "blender", "three.js", "react-three-fiber"],
+      tags: ["concept", "blender", "three.js", "next.js"],
+      href: "https://github.com/nilkantapandit/nilkanta-n01",
+    },
+    {
+      name: "wordpress-setup",
+      summary: "Bash scripts that automate WordPress server setup — new-site install, Nginx configuration and domain swaps.",
+      tags: ["bash", "wordpress", "nginx", "linux"],
+      href: "https://github.com/nilkantapandit/wordpress-setup",
+    },
+    {
+      name: "Maintenance report generator",
+      summary: "Flask app that builds the monthly website maintenance reports (.docx) for client sites.",
+      tags: ["python", "flask", "automation"],
+    },
+    {
+      name: "my-node-app",
+      summary: "Node.js service containerised with a Dockerfile and built by a GitHub Actions Docker CI workflow.",
+      tags: ["node.js", "docker", "github-actions", "ci"],
+      href: "https://github.com/nilkantapandit/my-node-app",
+    },
+    {
+      name: "my-docker-app",
+      summary: "Frontend + backend services wired together with Docker Compose.",
+      tags: ["docker", "docker-compose"],
+      href: "https://github.com/nilkantapandit/my-docker-app",
+    },
+    {
+      name: "webperf",
+      summary: "Python web app — routes / services / database layers with a templated UI and one-click Windows setup.",
+      tags: ["python", "web-app"],
+      href: "https://github.com/nilkantapandit/webperf",
     },
   ] as Project[],
-  /** TODO(nilkanta): add more public projects to the list above (name, summary, tags, optional href). */
-  moreProjectsPending: true,
+  moreProjectsPending: false,
 
   experience: [
-    { title: "DevOps Engineer", org: "Viacon Marketing & Technologies", period: "Nov 2025 – present" },
-    { title: "DevOps, Cloud Infrastructure & IT Associate", org: "Sourcedesk Global", period: "Aug 2024 – Oct 2025" },
+    {
+      title: "DevOps Engineer", org: "Viacon Marketing & Technologies", period: "Nov 2025 – present",
+      notes: ["WordPress site management and maintenance for client websites", "Security remediation and security-header hardening", "Monthly maintenance reports, proposals and hosting comparisons"],
+    },
+    {
+      title: "DevOps, Cloud Infrastructure & IT Associate", org: "Sourcedesk Global", period: "Aug 2024 – Oct 2025",
+      notes: ["DevOps, cloud infrastructure and IT operations"],
+    },
     { title: "IT Intern", org: "Sourcedesk Global", period: "Mar 2024 – Jul 2024" },
   ] as Role[],
 
@@ -72,8 +106,8 @@ export const content = {
 
   contact: {
     links: [{ label: "GitHub", href: "https://github.com/nilkantapandit" }] as Link[],
-    /** TODO(nilkanta): public email address. */
-    email: null as string | null,
+    phone: "+91 82404 56397" as string | null,
+    email: "nilkantapandit@gmail.com" as string | null,
     /** TODO(nilkanta): LinkedIn profile URL. */
     linkedin: null as string | null,
   },

@@ -95,7 +95,7 @@ export default function Experience() {
     []
   );
   const [lowPower, setLowPower] = useState(lowPowerInitial);
-  const [dpr, setDpr] = useState<[number, number]>(lowPowerInitial ? [1, 1.5] : [1, 1.75]);
+  const [dpr, setDpr] = useState<[number, number]>(lowPowerInitial ? [1, 1.25] : [1, 1.5]);
   const reset = requestReset;
 
   return (

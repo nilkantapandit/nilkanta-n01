@@ -123,6 +123,7 @@ registerCommand({
   run: () => [
     ...section("CONTACT"),
     ...content.contact.links.map((l) => link(`${l.label.padEnd(10)}${l.href}`, l.href)),
+    content.contact.phone ? link(`${"Phone".padEnd(10)}${content.contact.phone}`, `tel:${content.contact.phone.replace(/\s/g, "")}`) : dim(`${"Phone".padEnd(10)}${COMING_SOON}`),
     content.contact.email ? link(`${"Email".padEnd(10)}${content.contact.email}`, `mailto:${content.contact.email}`) : dim(`${"Email".padEnd(10)}${COMING_SOON}`),
     content.contact.linkedin ? link(`${"LinkedIn".padEnd(10)}${content.contact.linkedin}`, content.contact.linkedin) : dim(`${"LinkedIn".padEnd(10)}${COMING_SOON}`),
   ],

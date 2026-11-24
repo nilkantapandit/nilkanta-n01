@@ -184,7 +184,7 @@ export default function PointerFX() {
     <>
       <canvas ref={canvasRef} className="pulse-layer" aria-hidden="true" />
       <div ref={lockRef} className="target-lock" aria-hidden="true"><i /><i /><i /><i /></div>
-      <div ref={markerRef} className="cursor-marker" aria-hidden="true"><i /></div>
+      <div ref={markerRef} className="cursor-marker" aria-hidden="true"><i /><i /><i /><i /></div>
     </>
   );
 }
@@ -204,6 +204,7 @@ export function TargetLockProjector() {
   const last = useRef<{ key: unknown; x: number; y: number; w: number; h: number }>({ key: null, x: 0, y: 0, w: 0, h: 0 });
   const magnetLabel = useRef<string | null>(null);
   const frame = useRef(0);
+  const lastSig = useRef("");
 
   const nodes = useMemo(() => {
     const list: { id: ControlId; node: THREE.Object3D }[] = [];
@@ -283,9 +284,11 @@ export function TargetLockProjector() {
       } else pointerFx.nearDevice = false;
     }
 
-    // sticky cursor: only when nothing is hit directly
+    // sticky cursor: only when nothing is hit directly; re-searched only when the pointer or camera moved
     const canMagnet = pointerFx.overScene && !pointerFx.target && !s.hoveredHotspot && !s.immersive;
-    pointerFx.magnet = canMagnet ? findMagnet(pointerFx.px, pointerFx.py) : null;
+    const sig = `${pointerFx.px},${pointerFx.py},${camera.position.x.toFixed(3)},${camera.position.y.toFixed(3)},${camera.position.z.toFixed(3)}`;
+    if (!canMagnet) { pointerFx.magnet = null; lastSig.current = ""; }
+    else if (sig !== lastSig.current || frame.current % 10 === 0) { pointerFx.magnet = findMagnet(pointerFx.px, pointerFx.py); lastSig.current = sig; }
     const label = pointerFx.magnet ? CONTROL_LABELS[pointerFx.magnet.id] : null;
     if (label !== magnetLabel.current) {
       if (label) s.setHoverLabel(label);

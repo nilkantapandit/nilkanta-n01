@@ -1,7 +1,7 @@
 "use client";
 
 import { setHoverTarget, clearHoverTarget, pointerFx } from "@/lib/pointerFx";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
@@ -25,6 +25,16 @@ function resolve(obj: THREE.Object3D | null): { id: ControlId; node: THREE.Objec
     o = o.parent;
   }
   return null;
+}
+
+const _n = new THREE.Vector3(), _p = new THREE.Vector3(), _q = new THREE.Quaternion();
+/** Is the display square-on enough to operate (within ~15°)? Display front = local +Z. */
+function screenFacesCamera(display: THREE.Object3D, camera: THREE.Camera) {
+  display.getWorldQuaternion(_q);
+  _n.set(0, 0, 1).applyQuaternion(_q);
+  display.getWorldPosition(_p);
+  const v = camera.position.clone().sub(_p).normalize();
+  return _n.dot(v) > 0.966;
 }
 
 /**
@@ -69,9 +79,33 @@ export function useControlHandlers() {
       return hits.map((h) => ({ name: h.object.name, control: resolve(h.object)?.id ?? null, d: +h.distance.toFixed(3) }));
     };
   }
+  // Scrolling over the D-pad (wheel or its centre key — hit directly, or snapped to by the sticky
+  // cursor) moves the on-screen selection and NEVER zooms the camera, at any viewing angle.
+  // Capture phase on window runs before OrbitControls' own wheel listener on the canvas.
+  useEffect(() => {
+    let last = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.target as Element | null)?.closest?.(".canvas-wrap")) return;
+      const hovered = pointerFx.target ? CONTROL_NODES[pointerFx.target.name] : undefined;
+      const id = hovered ?? pointerFx.magnet?.id;
+      if (id !== "wheel" && id !== "wheel-center") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const now = performance.now();
+      if (now - last < 140) return;
+      last = now;
+      const dir = Math.sign(e.deltaY) || 1;
+      const wheel = scene.getObjectByName("N01_Nav_Wheel");
+      focusScreen();
+      if (wheel) spinWheel(wheel, dir);
+      screenOS.nav(dir > 0 ? "down" : "up");
+    };
+    window.addEventListener("wheel", onWheel, { capture: true, passive: false });
+    return () => window.removeEventListener("wheel", onWheel, { capture: true });
+  }, [scene]);
+
   const linkClicks = useRef<number[]>([]);
   const logoClicks = useRef<number[]>([]);
-  const lastWheel = useRef(0);
 
   return useMemo(() => {
     /** Keep orbiting off while a control is held (focus mode keeps it off anyway). */
@@ -185,21 +219,11 @@ export function useControlHandlers() {
         holdControls();
         if (r.id === "touchpad") { focusScreen(); startGesture(e, "touchpad"); }
         if (r.id === "display" && e.object.name === SCREEN_MESH_NAME) {
-          if (!useDevice.getState().screenFocus) focusScreen(); // the camera stays put, so the tap acts right away
+          if (!useDevice.getState().screenFocus) focusScreen();
+          // seen at an angle: this tap turns the view to face the screen; taps act once it faces you
+          if (!screenFacesCamera(r.node, camera)) { useDevice.getState().requestFaceScreen(); return; }
           startGesture(e, "screen");
         }
-      },
-      onWheel: (e: ThreeEvent<WheelEvent>) => {
-        const r = frontControl(e);
-        if (!r || r.id !== "wheel") return;
-        e.stopPropagation();
-        const now = performance.now();
-        if (now - lastWheel.current < 140) return;
-        lastWheel.current = now;
-        const dir = Math.sign(e.deltaY) || 1;
-        focusScreen();
-        spinWheel(r.node, dir);
-        screenOS.nav(dir > 0 ? "down" : "up");
       },
       onClick: (e: ThreeEvent<MouseEvent>) => {
         const r = frontControl(e);

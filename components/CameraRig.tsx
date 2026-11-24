@@ -7,6 +7,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import gsap from "gsap";
 import { useDevice } from "@/lib/store";
+import { pointerFx } from "@/lib/pointerFx";
 import { CAMERA_FOV, CAMERA_FOV_PORTRAIT, FRAME_HALF_WIDTH, HERO_DIRECTION, HERO_TARGET, MIN_HERO_DISTANCE } from "@/lib/config";
 
 type Props = {
@@ -82,6 +83,8 @@ export default function CameraRig({ resetSignal, idle }: Props) {
       raf = requestAnimationFrame(step);
     };
     const onStart = () => {
+      // a press on a device control is not a camera drag (it may have just started a face-the-screen tween)
+      if (performance.now() - pointerFx.lastDirectHit < 400) return;
       userMoved.current = true;
       window.clearTimeout(resumeTimer.current);
       gsap.killTweensOf([camera.position, c.target]);
@@ -101,13 +104,36 @@ export default function CameraRig({ resetSignal, idle }: Props) {
     };
   }, [camera, idle]);
 
+  // Tapping the screen while it is seen at an angle turns the view square-on to it (desktop and
+  // phones frame the whole front face so the wheel / keys / touch surface stay reachable).
+  // The camera stays free afterwards; other keys never move it.
+  const faceSignal = useDevice((s) => s.faceScreenSignal);
+  const root = useDevice((s) => s.modelRoot);
+  useEffect(() => {
+    if (faceSignal === 0) return;
+    const c = controls.current;
+    const display = root?.getObjectByName("N01_Display_Module");
+    if (!c || !display) return;
+    const center = display.getWorldPosition(new THREE.Vector3());
+    const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(display.getWorldQuaternion(new THREE.Quaternion()));
+    const aspect = size.width / size.height;
+    const halfFov = THREE.MathUtils.degToRad(fovFor(aspect) / 2);
+    const halfW = 0.96, halfH = 0.58; // whole device face (scene units)
+    const d = Math.max(halfW / (Math.tan(halfFov) * aspect), halfH / Math.tan(halfFov)) + 0.3;
+    const target = center.clone().add(new THREE.Vector3(0.0, -0.02, 0));
+    const pos = target.clone().add(normal.clone().add(new THREE.Vector3(0, 0.06, 0)).normalize().multiplyScalar(d));
+    gsap.killTweensOf([camera.position, c.target]);
+    userMoved.current = true;
+    gsap.to(camera.position, { x: pos.x, y: pos.y, z: pos.z, duration: 0.9, ease: "power3.inOut", onUpdate: () => c.update() });
+    gsap.to(c.target, { x: target.x, y: target.y, z: target.z, duration: 0.9, ease: "power3.inOut" });
+  }, [faceSignal]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Operating the screen no longer moves the camera: the N-01 stays at whatever angle the
   // visitor left it, rotation / zoom keep working, and every key stays clickable from there.
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    if (focus) gsap.killTweensOf([camera.position, c.target]);
-    c.enabled = true;
+    c.enabled = true; // never lock: (a face-the-screen tween may start in the same tap — leave it running)
   }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
