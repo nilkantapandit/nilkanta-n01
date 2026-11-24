@@ -1,5 +1,6 @@
 "use client";
 
+import { pointerFx } from "@/lib/pointerFx";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Center, useGLTF } from "@react-three/drei";
@@ -101,7 +102,7 @@ export default function N01Model({ idle }: Props) {
     if (!g) return;
     const t = state.clock.elapsedTime;
     const s = useDevice.getState();
-    const busy = !!(s.hoveredHotspot || s.pinnedHotspot || s.hoverLabel || s.screenFocus || s.overlay !== "none" || s.freezeIdle || calmMotion());
+    const busy = !!(s.hoveredHotspot || s.pinnedHotspot || s.hoverLabel || s.screenFocus || s.overlay !== "none" || s.freezeIdle || pointerFx.nearDevice || calmMotion());
     attention.current += ((busy ? 0 : 1) - attention.current) * (1 - Math.exp(-delta * (busy ? 6 : 1.2)));
     const w = idle.current * attention.current;
     // Slow, subtle presentation sway + float; eases toward rest while the user drags.

@@ -11,21 +11,24 @@ import AmbientGraph from "./AmbientGraph";
 import { TargetLockProjector } from "./PointerFX";
 import { DiagnosticsProbe } from "./EasterEggManager";
 import { FLOOR_Y } from "@/lib/config";
+import { useDevice } from "@/lib/store";
 
 type Props = { resetSignal: number; lowPower: boolean };
 
 export default function Scene({ resetSignal, lowPower }: Props) {
   const idle = useRef(1);
+  const light = useDevice((s) => s.theme === "light");
+  const bg = light ? "#e7e5e0" : "#050506";
   const calm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
   return (
     <>
-      <color attach="background" args={["#050506"]} />
-      <fog attach="fog" args={["#050506", 6, 15]} />
+      <color attach="background" args={[bg]} />
+      <fog attach="fog" args={[bg, light ? 4.5 : 6, light ? 10 : 15]} />
 
       {/* Soft ambient base so the charcoal enclosure never goes fully black */}
-      <ambientLight intensity={0.1} color="#f2ece6" />
-      <hemisphereLight args={["#cfd2d8", "#050505", 0.22]} />
+      <ambientLight intensity={light ? 0.32 : 0.1} color="#f2ece6" />
+      <hemisphereLight args={["#cfd2d8", light ? "#8f8a82" : "#050505", light ? 0.55 : 0.22]} />
 
       {/* Cinematic orange key (casts the only shadow map) */}
       <spotLight
@@ -67,21 +70,21 @@ export default function Scene({ resetSignal, lowPower }: Props) {
           resolution={lowPower ? 256 : 512}
           blur={[300, 80]}
           mixBlur={1}
-          mixStrength={1.4}
+          mixStrength={light ? 0.6 : 1.4}
           mixContrast={1}
-          mirror={0.6}
+          mirror={light ? 0.3 : 0.6}
           depthScale={1.1}
           minDepthThreshold={0.4}
           maxDepthThreshold={1.3}
           roughness={0.9}
           metalness={0.5}
-          color="#0a0909"
+          color={light ? "#f3f1ec" : "#0a0909"}
         />
       </mesh>
-      <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={0.55} scale={6} blur={2.4} far={1.6} resolution={lowPower ? 256 : 512} color="#000000" />
+      <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={light ? 0.4 : 0.55} scale={6} blur={2.4} far={1.6} resolution={lowPower ? 256 : 512} color="#000000" />
 
       {/* Subtle atmospheric particles */}
-      <Sparkles count={lowPower ? 40 : 80} scale={[9, 4, 9]} position={[0, 0.8, 0]} size={1.8} speed={calm ? 0 : 0.22} noise={calm ? 0 : 0.6} opacity={0.35} color="#ff8a3d" />
+      <Sparkles count={lowPower ? 40 : 80} scale={[9, 4, 9]} position={[0, 0.8, 0]} size={1.8} speed={calm ? 0 : 0.22} noise={calm ? 0 : 0.6} opacity={light ? 0.5 : 0.35} color={light ? "#e8700a" : "#ff8a3d"} />
 
       {/* Faint coordinate grid / node graph, stencilled so it stays behind the device */}
       <AmbientGraph lowPower={lowPower} />

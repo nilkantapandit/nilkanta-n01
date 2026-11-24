@@ -140,8 +140,18 @@ export default function OperatingModeSelector() {
   const powered = useDevice((s) => s.powered);
   const immersive = useDevice((s) => s.immersive);
   const ready = useDevice((s) => !!s.modelRoot);
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => { if (window.matchMedia("(max-width: 640px)").matches) setCollapsed(true); }, []);
+  // Compact by default so it never hides callouts: it shows the full status for a few seconds
+  // after load / a mode or TX change, then folds to one line. Hover / keyboard focus opens it;
+  // clicking the title pins it open (or closed again).
+  const [pinned, setPinned] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [peek, setPeek] = useState(true);
+  useEffect(() => {
+    setPeek(true);
+    const id = window.setTimeout(() => setPeek(false), 4500);
+    return () => window.clearTimeout(id);
+  }, [mode, transmitting]);
+  const collapsed = !(pinned || hover || peek || transmitting);
 
   // one simulation clock for the shared state (signal drift, cipher counter)
   useEffect(() => {
@@ -165,9 +175,17 @@ export default function OperatingModeSelector() {
   const secure = mode === "secure";
   const pick = (m: "field" | "secure") => { if (m !== mode) { setMode(m); deviceAudio.play("switch"); } };
   return (
-    <section className={`n01-mode ${secure ? "secure" : "field"}${transmitting ? " tx" : ""}${collapsed ? " collapsed" : ""}`} aria-label="N-01 operating mode status">
+    <section
+      className={`n01-mode ${secure ? "secure" : "field"}${transmitting ? " tx" : ""}${collapsed ? " collapsed" : ""}`}
+      aria-label="N-01 operating mode status"
+      data-pinned={pinned || undefined}
+      onPointerEnter={(e) => { if (e.pointerType === "mouse") setHover(true); }}
+      onPointerLeave={(e) => { if (e.pointerType === "mouse") setHover(false); }}
+      onFocus={() => setHover(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(false); }}
+    >
       <header className="nm-head">
-        <button type="button" className="nm-title" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed}>
+        <button type="button" className="nm-title" onClick={() => { if (!pinned) setPinned(true); else { setPinned(false); setPeek(false); setHover(false); } }} aria-expanded={!collapsed}>
           N01://MODE <span aria-hidden>{collapsed ? "▸" : "▾"}</span>
         </button>
         <span className="nm-dot" aria-hidden />

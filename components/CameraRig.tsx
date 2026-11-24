@@ -28,23 +28,8 @@ function heroPosition(aspect: number) {
   return new THREE.Vector3(...HERO_DIRECTION).normalize().multiplyScalar(d).add(new THREE.Vector3(...HERO_TARGET));
 }
 
-/**
- * Screen-inspect pose: square-on to the device face. Desktop frames the whole front face
- * (screen + wheel + touch surface + keys); portrait phones frame the screen and the key row.
- */
-function inspectPose(aspect: number, screenY: number) {
-  const halfFov = THREE.MathUtils.degToRad(fovFor(aspect) / 2);
-  const halfW = aspect < 1 ? 0.56 : 0.94;   // scene units (device is ~1.8 wide, screen ~0.85)
-  const halfH = aspect < 1 ? 0.5 : 0.56;
-  const d = Math.max(halfW / (Math.tan(halfFov) * aspect), halfH / Math.tan(halfFov)) + 0.27;
-  const target = new THREE.Vector3(0, aspect < 1 ? screenY - 0.05 : 0.0, 0.27);
-  const position = target.clone().add(new THREE.Vector3(0, 0.06, 1).normalize().multiplyScalar(d));
-  return { position, target };
-}
-
 export default function CameraRig({ resetSignal, idle }: Props) {
   const focus = useDevice((s) => s.screenFocus);
-  const root = useDevice((s) => s.modelRoot);
   const controls = useRef<OrbitControlsImpl>(null);
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
@@ -116,30 +101,14 @@ export default function CameraRig({ resetSignal, idle }: Props) {
     };
   }, [camera, idle]);
 
-  // Screen-operating mode: glide in front of the screen and lock; exit glides back to the hero view.
-  const wasFocused = useRef(false);
+  // Operating the screen no longer moves the camera: the N-01 stays at whatever angle the
+  // visitor left it, rotation / zoom keep working, and every key stays clickable from there.
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    gsap.killTweensOf([camera.position, c.target]);
-    if (focus) {
-      wasFocused.current = true;
-      c.enabled = false;
-      const screenY = (() => {
-        const n = root?.getObjectByName("N01_Display_Module");
-        return n ? n.getWorldPosition(new THREE.Vector3()).y : 0.04;
-      })();
-      const { position, target } = inspectPose(aspect, screenY);
-      gsap.to(camera.position, { x: position.x, y: position.y, z: position.z, duration: 1.1, ease: "power3.inOut", onUpdate: () => c.update() });
-      gsap.to(c.target, { x: target.x, y: target.y, z: target.z, duration: 1.1, ease: "power3.inOut" });
-    } else if (wasFocused.current) {
-      wasFocused.current = false;
-      const to = heroPosition(aspect);
-      gsap.to(camera.position, { x: to.x, y: to.y, z: to.z, duration: 1.2, ease: "power3.inOut", onUpdate: () => c.update() });
-      gsap.to(c.target, { x: HERO_TARGET[0], y: HERO_TARGET[1], z: HERO_TARGET[2], duration: 1.2, ease: "power3.inOut", onComplete: () => { c.enabled = true; } });
-      userMoved.current = false;
-    }
-  }, [focus, aspect]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (focus) gsap.killTweensOf([camera.position, c.target]);
+    c.enabled = true;
+  }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <OrbitControls
@@ -150,7 +119,7 @@ export default function CameraRig({ resetSignal, idle }: Props) {
       dampingFactor={0.06}
       rotateSpeed={0.55}
       zoomSpeed={0.6}
-      minDistance={Math.min(2.2, hero * 0.6)}
+      minDistance={Math.min(1.5, hero * 0.42)}
       maxDistance={Math.max(7, hero * 1.35)}
       minPolarAngle={0.35}
       maxPolarAngle={1.72}

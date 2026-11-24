@@ -50,7 +50,7 @@ function behindDevice<T extends THREE.Material>(m: T): T {
 /* ---------- shaders (positions are given directly in clip space) ---------- */
 const GRID_VS = /* glsl */ `void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const GRID_FS = /* glsl */ `
-uniform vec2 uRes; uniform float uDpr; uniform vec2 uOffset; uniform float uOpacity;
+uniform vec2 uRes; uniform float uDpr; uniform vec2 uOffset; uniform float uOpacity; uniform vec3 uInk;
 float lineAA(vec2 p, float cell){ vec2 g = abs(fract(p / cell - 0.5) - 0.5) * cell; return 1.0 - smoothstep(0.0, 1.0, min(g.x, g.y)); }
 void main(){
   vec2 px = gl_FragCoord.xy / uDpr + uOffset;            // CSS pixels
@@ -65,28 +65,28 @@ void main(){
   float mask = mix(0.35, 1.0, smoothstep(0.18, 0.75, r));        // quieter around the device
   mask *= 1.0 - smoothstep(0.42, 0.5, abs(uv.y - 0.5));          // soft top/bottom fade
   float a = (minor * 0.022 + major * 0.03 + tick * 0.09) * mask * uOpacity;
-  gl_FragColor = vec4(0.86, 0.88, 0.92, a);
+  gl_FragColor = vec4(uInk, a);
 }`;
 
 const POINT_VS = /* glsl */ `
 attribute float aSize; attribute float aAlpha; uniform float uDpr; varying float vAlpha;
 void main(){ vAlpha = aAlpha; gl_PointSize = aSize * uDpr; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const POINT_FS = /* glsl */ `
-uniform float uOpacity; varying float vAlpha;
+uniform float uOpacity; uniform vec3 uPoint; varying float vAlpha;
 void main(){
   vec2 d = gl_PointCoord - 0.5; float r2 = dot(d, d) * 4.0;   // 0 centre … 1 edge
   float core = exp(-r2 * 60.0); float glow = exp(-r2 * 7.0) * 0.32;
   float a = (core + glow) * vAlpha * uOpacity;
   if (a < 0.003) discard;
-  gl_FragColor = vec4(1.0, 0.97, 0.93, a);
+  gl_FragColor = vec4(uPoint, a);
 }`;
 
 const LINE_VS = /* glsl */ `
 attribute float aAlpha; varying float vAlpha;
 void main(){ vAlpha = aAlpha; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const LINE_FS = /* glsl */ `
-uniform float uOpacity; varying float vAlpha;
-void main(){ gl_FragColor = vec4(0.88, 0.9, 0.94, vAlpha * uOpacity); }`;
+uniform float uOpacity; uniform vec3 uInk; varying float vAlpha;
+void main(){ gl_FragColor = vec4(uInk, vAlpha * uOpacity); }`;
 
 /* ---------- model ---------- */
 type Node = { x: number; y: number; vx: number; vy: number; depth: number; size: number; base: number; phase: number; link: boolean };
@@ -135,11 +135,11 @@ export default function AmbientGraph({ lowPower }: { lowPower: boolean }) {
   }, [NODES, DUST, MARKERS]);
 
   const objs = useMemo(() => {
-    const uniforms = { uRes: { value: new THREE.Vector2(1, 1) }, uDpr: { value: 1 }, uOffset: { value: new THREE.Vector2() }, uOpacity: { value: 0 } };
+    const uniforms = { uRes: { value: new THREE.Vector2(1, 1) }, uDpr: { value: 1 }, uOffset: { value: new THREE.Vector2() }, uOpacity: { value: 0 }, uInk: { value: new THREE.Color(0.86, 0.88, 0.92) }, uPoint: { value: new THREE.Color(1, 0.97, 0.93) } };
 
     const grid = new THREE.Mesh(
       new THREE.PlaneGeometry(2, 2),
-      behindDevice(new THREE.ShaderMaterial({ vertexShader: GRID_VS, fragmentShader: GRID_FS, uniforms: { uRes: uniforms.uRes, uDpr: uniforms.uDpr, uOffset: uniforms.uOffset, uOpacity: uniforms.uOpacity } }))
+      behindDevice(new THREE.ShaderMaterial({ vertexShader: GRID_VS, fragmentShader: GRID_FS, uniforms: { uRes: uniforms.uRes, uDpr: uniforms.uDpr, uOffset: uniforms.uOffset, uOpacity: uniforms.uOpacity, uInk: uniforms.uInk } }))
     );
 
     const nPts = NODES + DUST;
@@ -147,12 +147,12 @@ export default function AmbientGraph({ lowPower }: { lowPower: boolean }) {
     pg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(nPts * 3), 3).setUsage(THREE.DynamicDrawUsage));
     pg.setAttribute("aSize", new THREE.BufferAttribute(new Float32Array(nPts), 1));
     pg.setAttribute("aAlpha", new THREE.BufferAttribute(new Float32Array(nPts), 1).setUsage(THREE.DynamicDrawUsage));
-    const points = new THREE.Points(pg, behindDevice(new THREE.ShaderMaterial({ vertexShader: POINT_VS, fragmentShader: POINT_FS, uniforms: { uDpr: uniforms.uDpr, uOpacity: uniforms.uOpacity } })));
+    const points = new THREE.Points(pg, behindDevice(new THREE.ShaderMaterial({ vertexShader: POINT_VS, fragmentShader: POINT_FS, uniforms: { uDpr: uniforms.uDpr, uOpacity: uniforms.uOpacity, uPoint: uniforms.uPoint } })));
 
     const lg = new THREE.BufferGeometry();
     lg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(SEGS * 2 * 3), 3).setUsage(THREE.DynamicDrawUsage));
     lg.setAttribute("aAlpha", new THREE.BufferAttribute(new Float32Array(SEGS * 2), 1).setUsage(THREE.DynamicDrawUsage));
-    const lines = new THREE.LineSegments(lg, behindDevice(new THREE.ShaderMaterial({ vertexShader: LINE_VS, fragmentShader: LINE_FS, uniforms: { uOpacity: uniforms.uOpacity } })));
+    const lines = new THREE.LineSegments(lg, behindDevice(new THREE.ShaderMaterial({ vertexShader: LINE_VS, fragmentShader: LINE_FS, uniforms: { uOpacity: uniforms.uOpacity, uInk: uniforms.uInk } })));
 
     const group = new THREE.Group();
     group.name = "N01_AmbientGraph";
@@ -194,7 +194,9 @@ export default function AmbientGraph({ lowPower }: { lowPower: boolean }) {
     const s = useDevice.getState();
     const target = !s.modelRoot ? 0 : s.screenFocus ? 0.45 : 1;
     sim.fade += (target - sim.fade) * Math.min(1, dt * 1.6);
-    uniforms.uOpacity.value = sim.fade;
+    uniforms.uOpacity.value = sim.fade * (s.theme === "light" ? 1.25 : 1);
+    if (s.theme === "light") { uniforms.uInk.value.setRGB(0.16, 0.14, 0.12); uniforms.uPoint.value.setRGB(0.86, 0.42, 0.04); }
+    else { uniforms.uInk.value.setRGB(0.86, 0.88, 0.92); uniforms.uPoint.value.setRGB(1, 0.97, 0.93); }
 
     // parallax with the orbit + an occasional slow drift of the whole field
     sph.setFromVector3(camera.position);

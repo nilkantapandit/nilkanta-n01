@@ -14,6 +14,17 @@ export type TerminalSession = { lines: Line[]; input: string; hist: string[]; hi
 export const CHANNEL = "CH_03";
 let noticeSeq = 0;
 
+export type Theme = "dark" | "light";
+const THEME_KEY = "n01-theme";
+function initialTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const saved = window.localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {}
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
 export type Overlay = "none" | "hire" | "matrix" | "arcade" | "secret" | "diagnostics";
 
 type DeviceState = {
@@ -76,6 +87,11 @@ type DeviceState = {
   /* ---------- hint bar ---------- */
   hoverLabel: string | null;
   setHoverLabel: (t: string | null) => void;
+
+  /* ---------- appearance ---------- */
+  /** Light = Flipper-style (light shell, orange LCD); dark = amber CRT. Persisted per browser. */
+  theme: Theme;
+  setTheme: (t: Theme) => void;
 
   /* ---------- audio ---------- */
   soundOn: boolean;
@@ -183,6 +199,13 @@ export const useDevice = create<DeviceState>((set, get) => ({
 
   hoverLabel: null,
   setHoverLabel: (t) => set({ hoverLabel: t }),
+
+  theme: initialTheme(),
+  setTheme: (t) => {
+    try { window.localStorage.setItem(THEME_KEY, t); } catch {}
+    if (typeof document !== "undefined") document.documentElement.dataset.theme = t;
+    set({ theme: t });
+  },
 
   soundOn: false,
   setSoundOn: (v) => set({ soundOn: v }),

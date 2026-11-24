@@ -1,6 +1,6 @@
 "use client";
 
-import { setHoverTarget, clearHoverTarget } from "@/lib/pointerFx";
+import { setHoverTarget, clearHoverTarget, pointerFx } from "@/lib/pointerFx";
 import { useMemo, useRef } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -79,7 +79,7 @@ export function useControlHandlers() {
       if (!controls) return;
       controls.enabled = false;
       const release = () => {
-        if (!useDevice.getState().screenFocus) controls.enabled = true;
+        controls.enabled = true; // the camera stays free while operating the screen
         window.removeEventListener("pointerup", release);
         window.removeEventListener("pointercancel", release);
       };
@@ -136,6 +136,27 @@ export function useControlHandlers() {
       window.addEventListener("pointercancel", finish);
     };
 
+    // Magnetic cursor: a click that lands just outside a key / the wheel is routed here.
+    pointerFx.activate = (id, node, dir) => {
+      switch (id) {
+        case "wheel": {
+          focusScreen();
+          const d = dir ?? "down";
+          spinWheel(node, d === "right" || d === "down" ? 1 : -1);
+          screenOS.nav(d);
+          break;
+        }
+        case "wheel-center": press(node, 0.0012); focusScreen(); screenOS.select(); break;
+        case "touchpad": focusScreen(); touchpadGlow(true, 1); window.setTimeout(() => touchpadGlow(false), 180); screenOS.select(); break;
+        case "btn-confirm": press(node); focusScreen(); screenOS.select(); break;
+        case "btn-cancel": case "back": press(node); backAction(); break;
+        case "btn-menu": press(node); focusScreen(); screenOS.menu(); break;
+        case "btn-power": press(node); screenOS.power(); break;
+        case "btn-fullscreen": press(node); deviceAudio.play("tick"); void toggleImmersive(); break;
+        case "switch": useDevice.getState().toggleMode(); deviceAudio.play("switch"); break;
+      }
+    };
+
     return {
       onPointerOver: (e: ThreeEvent<PointerEvent>) => {
         const r = frontControl(e);
@@ -160,10 +181,11 @@ export function useControlHandlers() {
         const r = frontControl(e);
         if (!r) return;
         e.stopPropagation();
+        pointerFx.lastDirectHit = performance.now();
         holdControls();
         if (r.id === "touchpad") { focusScreen(); startGesture(e, "touchpad"); }
         if (r.id === "display" && e.object.name === SCREEN_MESH_NAME) {
-          if (!useDevice.getState().screenFocus) { focusScreen(); return; } // first tap only brings the screen up
+          if (!useDevice.getState().screenFocus) focusScreen(); // the camera stays put, so the tap acts right away
           startGesture(e, "screen");
         }
       },

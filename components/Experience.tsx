@@ -66,6 +66,16 @@ class SceneErrorBoundary extends Component<{ children: React.ReactNode }, { erro
   }
 }
 
+function ThemeToggle() {
+  const theme = useDevice((s) => s.theme);
+  const setTheme = useDevice((s) => s.setTheme);
+  return (
+    <button className="reset" type="button" aria-pressed={theme === "light"} aria-label="Light theme" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+      light
+    </button>
+  );
+}
+
 export default function Experience() {
   const resetSignal = useDevice((s) => s.resetSignal);
   const immersive = useDevice((s) => s.immersive);
@@ -116,6 +126,7 @@ export default function Experience() {
         <div className="hud-bottom">
           <HintBar />
           <div className="hud-actions">
+            <ThemeToggle />
             <SoundToggle />
             <button className="reset" type="button" aria-pressed={calloutsVisible} onClick={() => setCalloutsVisible(!calloutsVisible)}>
               callouts

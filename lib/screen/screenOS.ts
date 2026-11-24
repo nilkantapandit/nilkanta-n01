@@ -33,19 +33,27 @@ export const APPS: { id: AppId; label: string; blurb: string }[] = [
 ];
 
 /* ---------------------------------------------------------------- palette & type */
-const AMBER = "#ffb02e";
-const BRIGHT = "#ffd27a";
-const PALE = "#fff0c8";
-const DIM = "rgba(255,176,46,0.55)";
-const FAINT = "rgba(255,176,46,0.16)";
-const ERR = "#ff6a3d";
+/** Dark: amber CRT. Light: Flipper-style orange LCD with dark pixels. */
+const DARK = {
+  AMBER: "#ffb02e", BRIGHT: "#ffd27a", PALE: "#fff0c8", DIM: "rgba(255,176,46,0.55)", FAINT: "rgba(255,176,46,0.16)",
+  ERR: "#ff6a3d", GLOW: "rgba(255,150,30,0.55)", OK_GREEN: "#7dff9c",
+  OFF: "#020100", BG: "#170b02", BG_SECURE: "#1c0702", BG_EDGE: "#060300",
+  SHADE: "rgba(3,1,0,0.62)", PANEL: "rgba(10,5,1,0.95)", EDGE: "rgba(255,176,46,0.55)", BAND: "rgba(5,3,0,0.82)",
+  INV: "#140a01", HILITE: "rgba(255,176,46,0.18)", GHOST: "rgba(255,176,46,0.32)",
+};
+const LCD: typeof DARK = {
+  AMBER: "#3b1d00", BRIGHT: "#261200", PALE: "#170a00", DIM: "rgba(59,29,0,0.62)", FAINT: "rgba(59,29,0,0.22)",
+  ERR: "#a11a00", GLOW: "rgba(0,0,0,0)", OK_GREEN: "#0e5a22",
+  OFF: "#2a1f16", BG: "#ffa646", BG_SECURE: "#ff9a38", BG_EDGE: "#ec8423",
+  SHADE: "rgba(255,166,70,0.6)", PANEL: "rgba(255,183,104,0.97)", EDGE: "rgba(59,29,0,0.7)", BAND: "rgba(255,170,84,0.92)",
+  INV: "#ffbb66", HILITE: "rgba(59,29,0,0.12)", GHOST: "rgba(59,29,0,0.35)",
+};
+let C = DARK;
+const color = (k: Line["kind"]) => ({ in: C.BRIGHT, out: C.AMBER, dim: C.DIM, accent: C.BRIGHT, err: C.ERR, sys: C.PALE, head: C.PALE, link: C.BRIGHT, pre: C.AMBER })[k];
 const MONO = '"JetBrains Mono", "Consolas", "SFMono-Regular", Menlo, "DejaVu Sans Mono", "Liberation Mono", monospace';
 const font = (px: number, bold = false) => `${bold ? "700 " : ""}${px}px ${MONO}`;
-const GLOW = "rgba(255,150,30,0.55)";
-const OK_GREEN = "#7dff9c";
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const COLOR: Record<Line["kind"], string> = { in: BRIGHT, out: AMBER, dim: DIM, accent: BRIGHT, err: ERR, sys: PALE, head: PALE, link: BRIGHT, pre: AMBER };
 
 /* ---------------------------------------------------------------- boot script */
 const BIOS = [
@@ -126,15 +134,7 @@ class ScreenOS {
       this.ctx.font = font(28);
       this.charW = this.ctx.measureText("M").width;
     }
-    // pre-rendered scanline overlay
-    const s = document.createElement("canvas");
-    s.width = SCREEN_W; s.height = SCREEN_H;
-    const sc = s.getContext("2d")!;
-    for (let y = 0; y < SCREEN_H; y += 3) { sc.fillStyle = "rgba(0,0,0,0.22)"; sc.fillRect(0, y + 2, SCREEN_W, 1); }
-    const v = sc.createRadialGradient(SCREEN_W / 2, SCREEN_H / 2, SCREEN_H * 0.35, SCREEN_W / 2, SCREEN_H / 2, SCREEN_H * 0.9);
-    v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.55)");
-    sc.fillStyle = v; sc.fillRect(0, 0, SCREEN_W, SCREEN_H);
-    this.scan = s;
+    this.buildScan();
     this.dirty = true;
     // the self-hosted JetBrains Mono may arrive after the first frame: re-measure and redraw once it does
     if (typeof document !== "undefined" && document.fonts?.load) {
@@ -144,6 +144,27 @@ class ScreenOS {
         this.dirty = true;
       }).catch(() => {});
     }
+  }
+
+  /** Pre-rendered scanline / pixel-grid + vignette overlay for the current palette. */
+  private buildScan() {
+    const s = document.createElement("canvas");
+    s.width = SCREEN_W; s.height = SCREEN_H;
+    const sc = s.getContext("2d")!;
+    const lcd = C === LCD;
+    for (let y = 0; y < SCREEN_H; y += 3) { sc.fillStyle = lcd ? "rgba(90,40,0,0.07)" : "rgba(0,0,0,0.22)"; sc.fillRect(0, y + 2, SCREEN_W, 1); }
+    const v = sc.createRadialGradient(SCREEN_W / 2, SCREEN_H / 2, SCREEN_H * 0.35, SCREEN_W / 2, SCREEN_H / 2, SCREEN_H * 0.9);
+    v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, lcd ? "rgba(120,50,0,0.22)" : "rgba(0,0,0,0.55)");
+    sc.fillStyle = v; sc.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    this.scan = s;
+  }
+  /** Switch between the amber CRT (dark) and the orange LCD (light) palette. */
+  setTheme(theme: "dark" | "light") {
+    const next = theme === "light" ? LCD : DARK;
+    if (next === C) return;
+    C = next;
+    if (this.canvas) this.buildScan();
+    this.dirty = true;
   }
 
   private sync() {
@@ -482,7 +503,7 @@ class ScreenOS {
     const g = this.ctx;
     if (!g) return;
     g.save();
-    g.fillStyle = "#020100";
+    g.fillStyle = C.OFF;
     g.fillRect(0, 0, SCREEN_W, SCREEN_H);
     if (this.level <= 0.003) { g.restore(); return; }
     let alpha = this.level;
@@ -493,8 +514,8 @@ class ScreenOS {
     // backlight
     const bg = g.createRadialGradient(SCREEN_W / 2, SCREEN_H / 2, 40, SCREEN_W / 2, SCREEN_H / 2, SCREEN_W * 0.72);
     const secure = useDevice.getState().mode === "secure";
-    bg.addColorStop(0, secure ? "#1c0702" : "#170b02");
-    bg.addColorStop(1, "#060300");
+    bg.addColorStop(0, secure ? C.BG_SECURE : C.BG);
+    bg.addColorStop(1, C.BG_EDGE);
     g.fillStyle = bg;
     g.fillRect(0, 0, SCREEN_W, SCREEN_H);
     g.textBaseline = "alphabetic";
@@ -517,10 +538,10 @@ class ScreenOS {
     g.restore();
   }
 
-  private text(g: CanvasRenderingContext2D, s: string, x: number, y: number, color = AMBER, px = 28, bold = false, glow = true) {
+  private text(g: CanvasRenderingContext2D, s: string, x: number, y: number, color = C.AMBER, px = 28, bold = false, glow = true) {
     g.font = font(px, bold);
     g.fillStyle = color;
-    g.shadowColor = glow ? GLOW : "transparent";
+    g.shadowColor = glow ? C.GLOW : "transparent";
     g.shadowBlur = glow ? 8 : 0;
     g.fillText(s, x, y);
     g.shadowBlur = 0;
@@ -528,9 +549,9 @@ class ScreenOS {
 
   private header(g: CanvasRenderingContext2D, title: string, back: boolean) {
     const st = useDevice.getState();
-    g.fillStyle = FAINT; g.fillRect(0, 70, SCREEN_W, 2);
-    if (back) this.text(g, "◀ " + title, 36, 48, PALE, 30, true);
-    else this.text(g, "NILKANTA · N-01", 36, 48, PALE, 30, true);
+    g.fillStyle = C.FAINT; g.fillRect(0, 70, SCREEN_W, 2);
+    if (back) this.text(g, "◀ " + title, 36, 48, C.PALE, 30, true);
+    else this.text(g, "NILKANTA · N-01", 36, 48, C.PALE, 30, true);
     const now = new Date();
     const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const secure = st.mode === "secure";
@@ -538,13 +559,13 @@ class ScreenOS {
     const modeTxt = secure ? (Math.floor(this.t) % 2 ? "■ SECURE" : "□ SECURE") : tx ? (Math.floor(this.t * 3) % 2 ? "● TX ACTIVE" : "○ TX ACTIVE") : "● FIELD COMMS";
     g.font = font(24, true);
     const w = g.measureText(clock).width;
-    this.text(g, clock, SCREEN_W - 36 - w, 46, AMBER, 24, true);
+    this.text(g, clock, SCREEN_W - 36 - w, 46, C.AMBER, 24, true);
     const mw = g.measureText(modeTxt).width;
-    this.text(g, modeTxt, SCREEN_W - 70 - w - mw, 46, secure ? BRIGHT : tx ? ERR : OK_GREEN, 24, true, false);
+    this.text(g, modeTxt, SCREEN_W - 70 - w - mw, 46, secure ? C.BRIGHT : tx ? C.ERR : C.OK_GREEN, 24, true, false);
   }
   private footer(g: CanvasRenderingContext2D, s: string) {
-    g.fillStyle = FAINT; g.fillRect(0, SCREEN_H - 66, SCREEN_W, 2);
-    this.text(g, s, 36, SCREEN_H - 24, DIM, 22, false, false);
+    g.fillStyle = C.FAINT; g.fillRect(0, SCREEN_H - 66, SCREEN_W, 2);
+    this.text(g, s, 36, SCREEN_H - 24, C.DIM, 22, false, false);
   }
 
   /* ---------------------------------------------------------------- notifications */
@@ -567,20 +588,20 @@ class ScreenOS {
     const f = this.noticeFade;
     g.save();
     g.globalAlpha = alpha * f;
-    g.fillStyle = "rgba(3,1,0,0.62)";
+    g.fillStyle = C.SHADE;
     g.fillRect(0, 0, SCREEN_W, SCREEN_H);
     const lh = 46, pad = 34;
     const W = 920, H = 70 + n.lines.length * lh + 26;
     const x = (SCREEN_W - W) / 2, y = Math.round((SCREEN_H - H) / 2) + 8;
-    g.fillStyle = "rgba(10,5,1,0.95)";
+    g.fillStyle = C.PANEL;
     g.fillRect(x, y, W, H);
-    g.strokeStyle = "rgba(255,176,46,0.55)"; g.lineWidth = 2;
+    g.strokeStyle = C.EDGE; g.lineWidth = 2;
     g.strokeRect(x + 1, y + 1, W - 2, H - 2);
-    g.fillStyle = FAINT; g.fillRect(x, y + 48, W, 2);
-    this.text(g, n.kind === "tx" ? "radio · notice" : "system · notice", x + pad, y + 34, DIM, 22, false, false);
+    g.fillStyle = C.FAINT; g.fillRect(x, y + 48, W, 2);
+    this.text(g, n.kind === "tx" ? "radio · notice" : "system · notice", x + pad, y + 34, C.DIM, 22, false, false);
     const tag = n.kind === "tx" ? "TX" : "MODE";
     g.font = font(22, true);
-    this.text(g, tag, x + W - pad - g.measureText(tag).width, y + 34, BRIGHT, 22, true, false);
+    this.text(g, tag, x + W - pad - g.measureText(tag).width, y + 34, C.BRIGHT, 22, true, false);
     const PS = "nilkanta@n01:~$ ";
     g.font = font(28);
     const cw = g.measureText("M").width;
@@ -590,16 +611,16 @@ class ScreenOS {
       const ly = y + 70 + 26 + i * lh;
       if (l.kind === "cmd") {
         const typed = l.text.slice(0, Math.max(0, Math.floor((el - t0) * 45)));
-        this.text(g, PS, x + pad, ly, BRIGHT, 28, true);
-        this.text(g, typed, x + pad + PS.length * cw, ly, PALE, 28);
+        this.text(g, PS, x + pad, ly, C.BRIGHT, 28, true);
+        this.text(g, typed, x + pad + PS.length * cw, ly, C.PALE, 28);
       } else if (l.kind === "ok") {
-        this.text(g, "[ OK ]", x + pad, ly, OK_GREEN, 28, true, false);
-        this.text(g, l.text, x + pad + 7 * cw, ly, PALE, 28);
+        this.text(g, "[ OK ]", x + pad, ly, C.OK_GREEN, 28, true, false);
+        this.text(g, l.text, x + pad + 7 * cw, ly, C.PALE, 28);
       } else if (l.kind === "info") {
-        this.text(g, l.text, x + pad + 7 * cw, ly, DIM, 26, false, false);
+        this.text(g, l.text, x + pad + 7 * cw, ly, C.DIM, 26, false, false);
       } else {
-        this.text(g, PS, x + pad, ly, BRIGHT, 28, true);
-        if (Math.floor(this.t * 2) % 2 === 0) { g.fillStyle = AMBER; g.fillRect(x + pad + PS.length * cw + 2, ly - 24, cw * 0.62, 28); }
+        this.text(g, PS, x + pad, ly, C.BRIGHT, 28, true);
+        if (Math.floor(this.t * 2) % 2 === 0) { g.fillStyle = C.AMBER; g.fillRect(x + pad + PS.length * cw + 2, ly - 24, cw * 0.62, 28); }
       }
     });
     g.restore();
@@ -616,28 +637,28 @@ class ScreenOS {
       g.font = font(30, true);
       const cw = g.measureText("M").width;
       const bw = BANNER[0].length * cw;
-      BANNER.forEach((l, i) => this.text(g, l, (SCREEN_W - bw) / 2, SCREEN_H / 2 - 150 + i * 40, PALE, 30, true));
+      BANNER.forEach((l, i) => this.text(g, l, (SCREEN_W - bw) / 2, SCREEN_H / 2 - 150 + i * 40, C.PALE, 30, true));
       g.textAlign = "center";
-      this.text(g, "N-01 · portable linux computer · web build", SCREEN_W / 2, SCREEN_H / 2 + 100, AMBER, 26, false);
+      this.text(g, "N-01 · portable linux computer · web build", SCREEN_W / 2, SCREEN_H / 2 + 100, C.AMBER, 26, false);
       const p = Math.min(1, (t - T_BACKLIGHT) / (T_BIOS - T_BACKLIGHT));
       const n = 30, k = Math.round(p * n);
-      this.text(g, `[${"#".repeat(k)}${".".repeat(n - k)}] ${String(Math.round(p * 100)).padStart(3)}%`, SCREEN_W / 2, SCREEN_H / 2 + 160, DIM, 24, false, false);
+      this.text(g, `[${"#".repeat(k)}${".".repeat(n - k)}] ${String(Math.round(p * 100)).padStart(3)}%`, SCREEN_W / 2, SCREEN_H / 2 + 160, C.DIM, 24, false, false);
       g.textAlign = "left";
       return;
     }
     let y = 70;
     const lh = 40;
     const shown = Math.min(BIOS.length, Math.floor((t - T_BIOS) / 0.22) + 1);
-    BIOS.slice(0, shown).forEach((l, i) => { this.text(g, l, 48, y, i === 0 ? PALE : AMBER, 28, i === 0); y += lh; });
+    BIOS.slice(0, shown).forEach((l, i) => { this.text(g, l, 48, y, i === 0 ? C.PALE : C.AMBER, 28, i === 0); y += lh; });
     if (t >= T_CHECKS) {
       y += 14;
       CHECKS.forEach((c, i) => {
         const p = Math.max(0, Math.min(1, (t - T_CHECKS - i * 0.25) / 0.6));
         if (t < T_CHECKS + i * 0.25) return;
-        this.text(g, c.padEnd(22), 48, y, AMBER, 26);
-        g.strokeStyle = DIM; g.lineWidth = 2; g.strokeRect(470, y - 22, 420, 24);
-        g.fillStyle = AMBER; g.fillRect(474, y - 18, 412 * p, 16);
-        this.text(g, p >= 1 ? "PASS" : `${Math.round(p * 100)}%`, 910, y, p >= 1 ? "#7dff9c" : AMBER, 26, true, false);
+        this.text(g, c.padEnd(22), 48, y, C.AMBER, 26);
+        g.strokeStyle = C.DIM; g.lineWidth = 2; g.strokeRect(470, y - 22, 420, 24);
+        g.fillStyle = C.AMBER; g.fillRect(474, y - 18, 412 * p, 16);
+        this.text(g, p >= 1 ? "PASS" : `${Math.round(p * 100)}%`, 910, y, p >= 1 ? C.OK_GREEN : C.AMBER, 26, true, false);
         y += 38;
       });
     }
@@ -645,14 +666,14 @@ class ScreenOS {
       y += 14;
       const n = Math.min(LINUX.length, Math.floor((t - T_LINUX) / 0.16) + 1);
       LINUX.slice(0, n).forEach((l) => {
-        this.text(g, "[", 48, y, AMBER, 24); this.text(g, "  OK  ", 62, y, "#7dff9c", 24, true, false); this.text(g, l.slice(8), 160, y, AMBER, 24);
+        this.text(g, "[", 48, y, C.AMBER, 24); this.text(g, "  OK  ", 62, y, C.OK_GREEN, 24, true, false); this.text(g, l.slice(8), 160, y, C.AMBER, 24);
         y += 32;
       });
     }
     if (t >= T_ONLINE - 0.35) {
-      g.fillStyle = "rgba(5,3,0,0.82)"; g.fillRect(0, SCREEN_H / 2 - 70, SCREEN_W, 140);
+      g.fillStyle = C.BAND; g.fillRect(0, SCREEN_H / 2 - 70, SCREEN_W, 140);
       g.textAlign = "center";
-      this.text(g, "SYSTEM ONLINE", SCREEN_W / 2, SCREEN_H / 2 + 22, PALE, 64, true);
+      this.text(g, "SYSTEM ONLINE", SCREEN_W / 2, SCREEN_H / 2 + 22, C.PALE, 64, true);
       g.textAlign = "left";
     }
   }
@@ -662,17 +683,17 @@ class ScreenOS {
     APPS.forEach((a, i) => {
       const y = MENU_Y0 + i * MENU_ROW;
       const on = i === this.sel;
-      if (on) { g.fillStyle = AMBER; g.shadowColor = GLOW; g.shadowBlur = 14; g.fillRect(36, y + 6, 480, MENU_ROW - 12); g.shadowBlur = 0; }
-      this.text(g, `${String(i + 1).padStart(2, "0")}  ${a.label}`, 56, y + MENU_ROW / 2 + 12, on ? "#140a01" : AMBER, 34, true, !on);
+      if (on) { g.fillStyle = C.AMBER; g.shadowColor = C.GLOW; g.shadowBlur = 14; g.fillRect(36, y + 6, 480, MENU_ROW - 12); g.shadowBlur = 0; }
+      this.text(g, `${String(i + 1).padStart(2, "0")}  ${a.label}`, 56, y + MENU_ROW / 2 + 12, on ? C.INV : C.AMBER, 34, true, !on);
     });
     // preview pane
     const a = APPS[this.sel];
-    g.strokeStyle = FAINT; g.lineWidth = 2; g.strokeRect(560, 100, 684, 640);
-    this.text(g, a.label, 596, 172, PALE, 56, true);
-    this.text(g, a.blurb, 596, 222, AMBER, 26);
+    g.strokeStyle = C.FAINT; g.lineWidth = 2; g.strokeRect(560, 100, 684, 640);
+    this.text(g, a.label, 596, 172, C.PALE, 56, true);
+    this.text(g, a.blurb, 596, 222, C.AMBER, 26);
     const preview = this.preview(a.id);
-    preview.forEach((l, i) => this.text(g, l, 596, 300 + i * 40, i === 0 ? BRIGHT : DIM, 26));
-    this.text(g, "✓ CONFIRM / CENTRE  ▶  OPEN", 596, 700, AMBER, 22, true, false);
+    preview.forEach((l, i) => this.text(g, l, 596, 300 + i * 40, i === 0 ? C.BRIGHT : C.DIM, 26));
+    this.text(g, "✓ CONFIRM / CENTRE  ▶  OPEN", 596, 700, C.AMBER, 22, true, false);
     this.footer(g, "WHEEL / SWIPE  move   ·   ✓ open   ·   ✕ exit screen   ·   ⏻ sleep");
   }
   private preview(id: AppId): string[] {
@@ -691,8 +712,8 @@ class ScreenOS {
   private drawPage(g: CanvasRenderingContext2D) {
     this.header(g, this.pageTitle, true);
     if (this.banner) {
-      g.fillStyle = AMBER; g.fillRect(36, 84, SCREEN_W - 72, 40);
-      this.text(g, this.banner, 52, 113, "#140a01", 24, true, false);
+      g.fillStyle = C.AMBER; g.fillRect(36, 84, SCREEN_W - 72, 40);
+      this.text(g, this.banner, 52, 113, C.INV, 24, true, false);
     }
     const y0 = PAGE_Y0 + (this.banner ? 30 : 0);
     const rows = PAGE_ROWS - (this.banner ? 1 : 0);
@@ -701,14 +722,14 @@ class ScreenOS {
     this.page.slice(this.scroll, this.scroll + rows).forEach((l, k) => {
       const i = this.scroll + k;
       const y = y0 + k * PAGE_ROW + 28;
-      if (l.item && i === selRow) { g.fillStyle = "rgba(255,176,46,0.18)"; g.fillRect(40, y - 30, SCREEN_W - 80, PAGE_ROW); this.text(g, "▶", 44, y, BRIGHT, PAGE_FONT, true); }
-      this.text(g, l.text, 76, y, COLOR[l.kind], PAGE_FONT, l.kind === "head" || l.kind === "accent");
+      if (l.item && i === selRow) { g.fillStyle = C.HILITE; g.fillRect(40, y - 30, SCREEN_W - 80, PAGE_ROW); this.text(g, "▶", 44, y, C.BRIGHT, PAGE_FONT, true); }
+      this.text(g, l.text, 76, y, color(l.kind), PAGE_FONT, l.kind === "head" || l.kind === "accent");
     });
     if (this.page.length > rows) {
       const h = (SCREEN_H - 200) * (rows / this.page.length);
       const top = 100 + ((SCREEN_H - 200 - h) * this.scroll) / Math.max(1, this.maxScroll());
-      g.fillStyle = FAINT; g.fillRect(SCREEN_W - 22, 100, 6, SCREEN_H - 200);
-      g.fillStyle = AMBER; g.fillRect(SCREEN_W - 22, top, 6, h);
+      g.fillStyle = C.FAINT; g.fillRect(SCREEN_W - 22, 100, 6, SCREEN_H - 200);
+      g.fillStyle = C.AMBER; g.fillRect(SCREEN_W - 22, top, 6, h);
     }
     this.footer(g, items.length ? "WHEEL / SWIPE  select   ·   ✓ open link   ·   ✕ back" : "WHEEL / SWIPE  scroll   ·   ✕ back   ·   ≡ menu");
   }
@@ -723,17 +744,17 @@ class ScreenOS {
     const top = 96, bottom = SCREEN_H - 120;
     const rows = Math.floor((bottom - top) / lh);
     const visible = wrapped.slice(-rows);
-    visible.forEach((l, i) => this.text(g, l.text, 40, top + 26 + i * lh, COLOR[l.kind], fs, l.kind === "head"));
+    visible.forEach((l, i) => this.text(g, l.text, 40, top + 26 + i * lh, color(l.kind), fs, l.kind === "head"));
     // prompt
     const ps = "nilkanta@n01:~$ ";
     const y = top + 26 + visible.length * lh;
     const inp = this.term.input;
     const shownInput = (ps + inp).length > cols ? "…" + (ps + inp).slice(-(cols - 1)) : ps + inp;
-    this.text(g, shownInput, 40, y, BRIGHT, fs);
+    this.text(g, shownInput, 40, y, C.BRIGHT, fs);
     const cx = 40 + shownInput.length * cw;
     const sug = inp.includes(" ") ? [] : complete(inp);
-    if (sug[0]) this.text(g, sug[0].slice(inp.length), cx, y, "rgba(255,176,46,0.32)", fs, false, false);
-    if (Math.floor(this.t * 2) % 2 === 0) { g.fillStyle = AMBER; g.shadowColor = GLOW; g.shadowBlur = 10; g.fillRect(cx + 2, y - fs + 4, cw * 0.62, fs + 2); g.shadowBlur = 0; }
+    if (sug[0]) this.text(g, sug[0].slice(inp.length), cx, y, C.GHOST, fs, false, false);
+    if (Math.floor(this.t * 2) % 2 === 0) { g.fillStyle = C.AMBER; g.shadowColor = C.GLOW; g.shadowBlur = 10; g.fillRect(cx + 2, y - fs + 4, cw * 0.62, fs + 2); g.shadowBlur = 0; }
     this.footer(g, sug.length ? `tab ▶ ${sug.slice(0, 5).join("  ")}` : "ENTER run   ·   TAB complete   ·   ↑↓ history   ·   ESC / ✕ back");
   }
 
@@ -741,14 +762,14 @@ class ScreenOS {
     const s = this.snake;
     this.header(g, `ARCADE · SCORE ${String(s.score).padStart(4, "0")}`, true);
     const ox = (SCREEN_W - GRID_W * CELL) / 2, oy = 92;
-    g.strokeStyle = FAINT; g.lineWidth = 2; g.strokeRect(ox - 2, oy - 2, GRID_W * CELL + 4, GRID_H * CELL + 4);
+    g.strokeStyle = C.FAINT; g.lineWidth = 2; g.strokeRect(ox - 2, oy - 2, GRID_W * CELL + 4, GRID_H * CELL + 4);
     g.fillStyle = "#ff6a1a"; g.fillRect(ox + s.food[0] * CELL + 8, oy + s.food[1] * CELL + 8, CELL - 16, CELL - 16);
-    s.body.forEach(([x, y], i) => { g.fillStyle = i === 0 ? BRIGHT : AMBER; g.fillRect(ox + x * CELL + 3, oy + y * CELL + 3, CELL - 6, CELL - 6); });
+    s.body.forEach(([x, y], i) => { g.fillStyle = i === 0 ? C.BRIGHT : C.AMBER; g.fillRect(ox + x * CELL + 3, oy + y * CELL + 3, CELL - 6, CELL - 6); });
     if (!s.alive) {
-      g.fillStyle = "rgba(5,3,0,0.8)"; g.fillRect(0, SCREEN_H / 2 - 70, SCREEN_W, 140);
+      g.fillStyle = C.BAND; g.fillRect(0, SCREEN_H / 2 - 70, SCREEN_W, 140);
       g.textAlign = "center";
-      this.text(g, "GAME OVER", SCREEN_W / 2, SCREEN_H / 2 + 4, PALE, 56, true);
-      this.text(g, "✓ / tap to restart", SCREEN_W / 2, SCREEN_H / 2 + 46, AMBER, 26);
+      this.text(g, "GAME OVER", SCREEN_W / 2, SCREEN_H / 2 + 4, C.PALE, 56, true);
+      this.text(g, "✓ / tap to restart", SCREEN_W / 2, SCREEN_H / 2 + 46, C.AMBER, 26);
       g.textAlign = "left";
     }
     this.footer(g, "WHEEL sides / SWIPE / ARROWS  steer   ·   ✕ back");
@@ -773,12 +794,12 @@ class ScreenOS {
 
   private drawSecret(g: CanvasRenderingContext2D) {
     this.header(g, "// SECRET MENU", true);
-    this.text(g, "You found the long-press menu.", 56, 150, DIM, 26);
+    this.text(g, "You found the long-press menu.", 56, 150, C.DIM, 26);
     SECRET.forEach((it, i) => {
       const y = 200 + i * 64;
       const on = i === this.secretSel;
-      if (on) { g.fillStyle = AMBER; g.fillRect(36, y + 6, 640, 52); }
-      this.text(g, it.label, 56, y + 42, on ? "#140a01" : AMBER, 30, true, !on);
+      if (on) { g.fillStyle = C.AMBER; g.fillRect(36, y + 6, 640, 52); }
+      this.text(g, it.label, 56, y + 42, on ? C.INV : C.AMBER, 30, true, !on);
     });
     this.footer(g, "WHEEL / SWIPE  move   ·   ✓ run   ·   ✕ back");
   }
@@ -813,7 +834,9 @@ if (typeof window !== "undefined") {
     const fn = map[s.overlay];
     if (fn) { useDevice.setState({ overlay: "none" }); if (!s.screenFocus) s.setScreenFocus(true); fn(); }
   });
+  screenOS.setTheme(useDevice.getState().theme);
   useDevice.subscribe((s, prev) => {
+    if (s.theme !== prev.theme) screenOS.setTheme(s.theme);
     if (s.mode !== prev.mode || s.notice !== prev.notice || s.transmitting !== prev.transmitting || s.terminal !== prev.terminal) screenOS.dirty = true;
   });
 }
