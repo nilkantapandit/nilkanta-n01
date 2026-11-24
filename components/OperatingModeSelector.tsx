@@ -1,0 +1,195 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import type * as THREE from "three";
+import gsap from "gsap";
+import { CHANNEL, useDevice } from "@/lib/store";
+import { setModeTarget, setTransmitGlow, updateDeviceMaterials } from "@/lib/deviceMaterials";
+import { deviceAudio } from "@/lib/deviceAudio";
+
+/* ================================================================ in-canvas part */
+const SWITCH_TRAVEL = 0.0015; // ±1.5 mm inside the 16 mm slot (13 mm cap)
+
+/** Animates the physical mode switch and drives the runtime LED / screen changes. */
+export function ModeEffects() {
+  const root = useDevice((s) => s.modelRoot);
+  const mode = useDevice((s) => s.mode);
+  const transmitting = useDevice((s) => s.transmitting);
+  const sw = useRef<{ node: THREE.Object3D; baseX: number } | null>(null);
+
+  useEffect(() => {
+    if (!root) return;
+    const node = root.getObjectByName("N01_Power_Mode_Switch");
+    if (!node) return;
+    sw.current = { node, baseX: node.position.x };
+    node.position.x = sw.current.baseX - SWITCH_TRAVEL; // FIELD position at start
+  }, [root]);
+
+  useEffect(() => {
+    setModeTarget(mode === "secure");
+    const s = sw.current;
+    if (!s) return;
+    gsap.to(s.node.position, { x: s.baseX + (mode === "secure" ? SWITCH_TRAVEL : -SWITCH_TRAVEL), duration: 0.28, ease: "back.out(2)" });
+  }, [mode]);
+
+  useEffect(() => { setTransmitGlow(transmitting); }, [transmitting]);
+
+  useFrame((state, dt) => updateDeviceMaterials(state.clock.elapsedTime, Math.min(dt, 0.1)));
+  return null;
+}
+
+/* ================================================================ status panel (HUD) */
+/**
+ * Compact terminal-style status monitor. It owns no mode state: everything (mode, TX,
+ * simulated signal / cipher counters) comes from the shared store, which the physical
+ * screen subscribes to as well. The physical display remains the primary interface.
+ */
+function useNow(active: boolean, ms = 1000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const id = window.setInterval(() => setNow(Date.now()), ms);
+    return () => window.clearInterval(id);
+  }, [active, ms]);
+  return now;
+}
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const hms = (sec: number) => `${pad2(Math.floor(sec / 3600))}:${pad2(Math.floor(sec / 60) % 60)}:${pad2(sec % 60)}`;
+const meter = (v: number, n = 10) => "▮".repeat(Math.round(v * n)) + "▯".repeat(n - Math.round(v * n));
+/** Deterministic pseudo-hex from the shared block counter (visual only). */
+const cipherHex = (k: number) => Array.from({ length: 3 }, (_, i) => ((Math.imul(k + i * 7919, 2654435761) >>> 0) & 0xffff).toString(16).padStart(4, "0")).join(" ");
+
+function startTx() {
+  const s = useDevice.getState();
+  if (s.transmitting || s.mode !== "field") return;
+  s.setTransmitting(true);
+  deviceAudio.play("squelch"); deviceAudio.startStatic();
+}
+function stopTx() {
+  const s = useDevice.getState();
+  if (!s.transmitting) return;
+  s.setTransmitting(false);
+  deviceAudio.stopStatic(); deviceAudio.play("squelch");
+}
+
+function FieldStatus() {
+  const transmitting = useDevice((s) => s.transmitting);
+  const txSince = useDevice((s) => s.txSince);
+  const signal = useDevice((s) => s.sim.signal);
+  const now = useNow(transmitting, 250);
+  const [level, setLevel] = useState(0.4);
+  useEffect(() => {
+    if (!transmitting) return;
+    const id = window.setInterval(() => setLevel(0.3 + Math.random() * 0.7), 140);
+    return () => window.clearInterval(id);
+  }, [transmitting]);
+  const txSec = txSince ? Math.max(0, Math.floor((now - txSince) / 1000)) : 0;
+  return (
+    <>
+      <div className="nm-cmd">$ radio.service --status</div>
+      <div className="nm-line"><b className="nm-ok">[ OK ]</b> SERVICE INITIALIZED</div>
+      <dl className="nm-kv">
+        <dt>CHANNEL</dt><dd>{CHANNEL}</dd>
+        <dt>SIGNAL</dt><dd>{signal}% <span className="nm-bar" aria-hidden>{meter(signal / 100, 5)}</span></dd>
+        <dt>TX</dt>
+        <dd className={transmitting ? "nm-tx" : ""}>
+          {transmitting ? <>ACTIVE {pad2(txSec)}s <span className="nm-bar" aria-hidden>{meter(level, 6)}</span></> : "STANDBY"}
+        </dd>
+      </dl>
+      <button
+        type="button"
+        className={`nm-ptt${transmitting ? " on" : ""}`}
+        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startTx(); }}
+        onPointerUp={stopTx}
+        onPointerCancel={stopTx}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) startTx(); }}
+        onKeyUp={(e) => { if (e.key === "Enter") stopTx(); }}
+        aria-pressed={transmitting}
+      >
+        <span>{transmitting ? "[ TX ]" : "[ PTT ]"}</span> {transmitting ? "transmitting…" : "hold to talk"} <kbd>SPACE</kbd>
+      </button>
+    </>
+  );
+}
+
+function SecureStatus() {
+  const since = useDevice((s) => s.sim.secureSince);
+  const blocks = useDevice((s) => s.sim.cipherBlocks);
+  const now = useNow(true, 1000);
+  const up = since ? Math.max(0, Math.floor((now - since) / 1000)) : 0;
+  return (
+    <>
+      <div className="nm-cmd">$ securityd --status</div>
+      <div className="nm-line"><b className="nm-ok">[ OK ]</b> SECURITY SERVICE ACTIVE</div>
+      <dl className="nm-kv">
+        <dt>SESSION</dt><dd><span className="nm-lock" aria-hidden>■</span> LOCKED</dd>
+        <dt>CIPHER</dt><dd className="nm-hex">{cipherHex(blocks)}</dd>
+        <dt>BLOCKS</dt><dd>{blocks.toLocaleString("en-US")}</dd>
+        <dt>UPTIME</dt><dd>{hms(up)}</dd>
+      </dl>
+    </>
+  );
+}
+
+/** Website-level operating modes: status monitor + mode select (the physical orange switch does the same). */
+export default function OperatingModeSelector() {
+  const mode = useDevice((s) => s.mode);
+  const setMode = useDevice((s) => s.setMode);
+  const transmitting = useDevice((s) => s.transmitting);
+  const powered = useDevice((s) => s.powered);
+  const immersive = useDevice((s) => s.immersive);
+  const ready = useDevice((s) => !!s.modelRoot);
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => { if (window.matchMedia("(max-width: 640px)").matches) setCollapsed(true); }, []);
+
+  // one simulation clock for the shared state (signal drift, cipher counter)
+  useEffect(() => {
+    const id = window.setInterval(() => { if (!document.hidden) useDevice.getState().stepSim(); }, 1200);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // hold Space to talk (FIELD COMMS only; ignored while typing or operating the screen)
+  useEffect(() => {
+    const typing = () => document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement;
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat || typing() || useDevice.getState().screenFocus || useDevice.getState().mode !== "field") return;
+      e.preventDefault(); startTx();
+    };
+    const up = (e: KeyboardEvent) => { if (e.code === "Space") stopTx(); };
+    window.addEventListener("keydown", down); window.addEventListener("keyup", up);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+  }, []);
+
+  if (!powered || !ready || immersive) return null;
+  const secure = mode === "secure";
+  const pick = (m: "field" | "secure") => { if (m !== mode) { setMode(m); deviceAudio.play("switch"); } };
+  return (
+    <section className={`n01-mode ${secure ? "secure" : "field"}${transmitting ? " tx" : ""}${collapsed ? " collapsed" : ""}`} aria-label="N-01 operating mode status">
+      <header className="nm-head">
+        <button type="button" className="nm-title" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed}>
+          N01://MODE <span aria-hidden>{collapsed ? "▸" : "▾"}</span>
+        </button>
+        <span className="nm-dot" aria-hidden />
+      </header>
+      <div className="nm-modeline" aria-live="polite">
+        <span className="nm-strong">{secure ? "SECURE_MODE" : "FIELD_COMMS"}</span>
+        <span className="nm-tag">{transmitting ? "[TX]" : "[ACTIVE]"}</span>
+      </div>
+      {!collapsed && (
+        <>
+          <div className="nm-body">{secure ? <SecureStatus /> : <FieldStatus />}</div>
+          <div className="nm-select">
+            <span className="nm-k">MODE SELECT</span>
+            <div className="nm-seg" role="radiogroup" aria-label="Operating mode">
+              <button type="button" role="radio" aria-checked={!secure} className={!secure ? "on" : ""} onClick={() => pick("field")}>FIELD_COMMS</button>
+              <span aria-hidden>/</span>
+              <button type="button" role="radio" aria-checked={secure} className={secure ? "on" : ""} onClick={() => pick("secure")}>SECURE_MODE</button>
+            </div>
+          </div>
+          <footer className="nm-note"># simulated · no real {secure ? "encryption" : "radio transmission"}</footer>
+        </>
+      )}
+    </section>
+  );
+}
