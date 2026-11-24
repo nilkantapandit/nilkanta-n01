@@ -84,10 +84,24 @@ export function useControlHandlers() {
   // Capture phase on window runs before OrbitControls' own wheel listener on the canvas.
   useEffect(() => {
     let last = 0;
+    // What is under the pointer *right now* (not the last hover event): nearest device hit, else
+    // the sticky-cursor reach around the D-pad.
+    const rc = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const dpadUnder = (x: number, y: number): ControlId | undefined => {
+      const root = useDevice.getState().modelRoot;
+      if (!root) return undefined;
+      ndc.set((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
+      rc.setFromCamera(ndc, camera);
+      const hit = rc.intersectObject(root, true)[0];
+      const direct = hit ? resolve(hit.object)?.id : undefined;
+      if (direct) return direct;
+      const m = pointerFx.findMagnet?.(x, y, 18);
+      return m?.id;
+    };
     const onWheel = (e: WheelEvent) => {
       if (!(e.target as Element | null)?.closest?.(".canvas-wrap")) return;
-      const hovered = pointerFx.target ? CONTROL_NODES[pointerFx.target.name] : undefined;
-      const id = hovered ?? pointerFx.magnet?.id;
+      const id = dpadUnder(e.clientX, e.clientY);
       if (id !== "wheel" && id !== "wheel-center") return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -102,7 +116,7 @@ export function useControlHandlers() {
     };
     window.addEventListener("wheel", onWheel, { capture: true, passive: false });
     return () => window.removeEventListener("wheel", onWheel, { capture: true });
-  }, [scene]);
+  }, [scene, camera, size]);
 
   const linkClicks = useRef<number[]>([]);
   const logoClicks = useRef<number[]>([]);
