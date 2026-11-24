@@ -33,7 +33,7 @@ export const CONTROL_LABELS: Record<ControlId, string> = {
   touchpad: "Touch surface — swipe · tap · long-press",
   "btn-cancel": "Cancel — back / exit screen",
   "btn-menu": "Menu — main menu",
-  "btn-power": "Power — boot / sleep / wake",
+  "btn-power": "Power — boot / shut down",
   "btn-fullscreen": "Fullscreen — immersive mode",
   "btn-confirm": "Confirm — select",
   back: "Back",

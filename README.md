@@ -50,13 +50,13 @@ registerCommand({ name: "hello", description: "Say hi", menu: true, run: () => [
   the hero view, where manual rotation works again.
 - **Terminal app** (on the screen) — `help`, `whoami`, `about`, `skills`, `projects`, `experience`, `security`,
   `art`, `gaming`, `contact`, `neofetch`, `ps` (pm2-style service table), `history`, `ls`, `cat`, `pwd`,
-  `uname`, `date`, `echo`, `mode --set secure|field-comms`, `clear`, `exit`. Tab autocompletes, ↑/↓ history.
+  `uname`, `date`, `echo`, `mode --set secure|field-comms`, `shutdown` (`poweroff`), `clear`, `exit`. Tab autocompletes, ↑/↓ history.
   Keyboard input goes through an invisible input; nothing is rendered as an HTML popup.
 - **Physical controls (raycast on the model — they are the navigation bar)**
   - Nav wheel: click a side or scroll over it to move the selection; centre button selects.
   - Touch surface: swipe to move, tap to select, long-press for a hidden menu.
   - Screen: tap a menu row to open it, swipe to move the selection (main input on phones).
-  - Keys: Cancel (back / close), Menu (main menu), Power (boot / sleep / wake), Fullscreen (immersive mode,
+  - Keys: Cancel (back / close), Menu (main menu), Power (boot / shut down — a goodbye, then nothing is kept), Fullscreen (immersive mode,
     HUD hidden), Confirm (activate). Keys animate and light up when pressed.
   - Keyboard while operating: arrows/WASD move, Enter selects, Esc/Backspace goes back.
 - **Status panel** — `N01://MODE` shows full status briefly after load or a change, then folds to one line;

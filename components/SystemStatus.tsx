@@ -40,7 +40,7 @@ export function HintBar() {
   const label = useDevice((s) => s.hoverLabel);
   const focus = useDevice((s) => s.screenFocus);
   const phase = useDevice((s) => s.screenPhase);
-  const idle = phase === "off" ? "n-01 is off · press the ⏻ power key below the screen to boot" : phase === "sleep" ? "n-01 asleep · press ⏻ to wake" : focus
+  const idle = phase === "off" ? "n-01 is off · press the ⏻ power key below the screen to boot" : phase === "shutdown" ? "shutting down · session discarded" : focus
     ? "wheel/swipe/arrows: move · ✓/enter: select · ✕/esc: back · ≡: menu"
     : "drag: rotate · scroll/pinch: zoom · click the screen: operate the n-01";
   return <span className={`hint${label ? " live" : ""}`}>{label ?? idle}</span>;

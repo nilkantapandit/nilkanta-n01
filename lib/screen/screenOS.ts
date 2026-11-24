@@ -18,7 +18,7 @@ import { flashControl, setPowerLevel } from "@/lib/deviceMaterials";
 export const SCREEN_W = 1280;
 export const SCREEN_H = 853;
 
-export type Phase = "off" | "booting" | "online" | "sleep";
+export type Phase = "off" | "booting" | "online" | "shutdown";
 export type AppId = "menu" | "system" | "devops" | "projects" | "security" | "arcade" | "contact" | "terminal" | "secret" | "matrix";
 export type Dir = "up" | "down" | "left" | "right";
 
@@ -72,6 +72,15 @@ const LINUX = [
   "[  OK  ] Reached target Graphical Interface.",
 ];
 // timeline (seconds)
+// power-off timeline (seconds): log lines, goodbye, fade, dark
+const T_SHUT_BYE = 1.9, T_SHUT_FADE = 3.6, T_SHUT_END = 4.4;
+const SHUT_LOG = [
+  "[  OK  ] Stopped radio.service / securityd.",
+  "[  OK  ] Stopped nsh web shell.",
+  "[  OK  ] Discarded session (history, apps, mode).",
+  "[  OK  ] Stopped N-01 display service.",
+  "[  OK  ] Reached target Power-Off.",
+];
 const T_BACKLIGHT = 0.9, T_BIOS = 3.5, T_CHECKS = 4.8, T_LINUX = 6.0, T_ONLINE = 7.1;
 
 type PageLine = Line & { item?: boolean };
@@ -168,7 +177,7 @@ class ScreenOS {
   }
 
   private sync() {
-    useDevice.setState({ screenPhase: this.phase, screenApp: this.app, powered: this.phase === "online" || this.phase === "booting" });
+    useDevice.setState({ screenPhase: this.phase, screenApp: this.app, powered: this.phase === "online" || this.phase === "booting" || this.phase === "shutdown" });
   }
 
   /* ---------------------------------------------------------------- power */
@@ -178,20 +187,35 @@ class ScreenOS {
     deviceAudio.play("boot");
     this.sync(); this.dirty = true;
   }
-  /** Power key: off → boot · online → sleep · sleep → wake. */
+  /** Power key: off → boot · on → shut down (goodbye, then nothing is kept). */
   power() {
     if (this.phase === "off") return this.boot();
-    if (this.phase === "online" || this.phase === "booting") {
-      this.phase = "sleep"; deviceAudio.play("shutdown");
-      useDevice.getState().setTransmitting(false);
-    } else if (this.phase === "sleep") {
-      this.phase = "online"; this.flicker = 0.35; deviceAudio.play("confirm");
-    }
+    if (this.phase === "online" || this.phase === "booting") this.shutdown("power key");
+  }
+  /** Power-off sequence: services stop, a goodbye, the screen goes dark and the session is discarded. */
+  private shutT = 0;
+  private shutBy = "power key";
+  shutdown(by = "power key") {
+    if (this.phase === "shutdown" || this.phase === "off") return;
+    this.phase = "shutdown"; this.shutT = 0; this.shutBy = by;
+    useDevice.setState({ transmitting: false, txSince: null, notice: null });
+    deviceAudio.play("shutdown");
     this.sync(); this.dirty = true;
   }
-  /** Any key while asleep wakes the device. Returns true if the key was consumed by waking. */
+  /** Nothing survives a power-off: next boot starts fresh (menu, empty terminal, FIELD_COMMS). */
+  private resetSession() {
+    this.app = "menu"; this.sel = 0; this.scroll = 0; this.itemSel = 0; this.banner = null; this.page = [];
+    this.tabState = null;
+    useDevice.setState({
+      terminal: { lines: [], input: "", hist: [], hi: -1 },
+      notice: null, transmitting: false, txSince: null, overlay: "none", screenFocus: false,
+      mode: "field", sim: { ...useDevice.getState().sim, secureSince: null, cipherBlocks: 0 },
+    });
+    this.onInputChange?.("");
+  }
+  /** Any key while off points at ⏻; keys during boot skip ahead. Returns true if the key was consumed. */
   private wakeIfNeeded() {
-    if (this.phase === "sleep") { this.power(); return true; }
+    if (this.phase === "shutdown") return true;
     if (this.phase === "off") { this.nudgePower(); return true; } // only ⏻ boots it
     if (this.phase === "booting") { if (this.bootT > T_BACKLIGHT) this.bootT = Math.max(this.bootT, T_LINUX + 0.6); return true; }
     return false;
@@ -376,7 +400,7 @@ class ScreenOS {
           { kind: "out", text: "  ✓ confirm · centre    select" },
           { kind: "out", text: "  ✕ cancel · back       back" },
           { kind: "out", text: "  ≡ menu                main menu" },
-          { kind: "out", text: "  ⏻ power               sleep / wake" },
+          { kind: "out", text: "  ⏻ power               boot / shut down" },
           { kind: "out", text: "  ⛶ fullscreen          immersive mode" },
           { kind: "dim", text: "  orange switch (top)   FIELD COMMS ↔ SECURE (simulated)" }];
         break;
@@ -464,12 +488,19 @@ class ScreenOS {
     this.t += dt;
     let animating = false;
     // backlight
-    const targetLevel = this.phase === "online" ? 1 : this.phase === "booting" ? Math.min(1, this.bootT / T_BACKLIGHT) : 0;
+    const targetLevel = this.phase === "online" ? 1
+      : this.phase === "booting" ? Math.min(1, this.bootT / T_BACKLIGHT)
+      : this.phase === "shutdown" ? (this.shutT < T_SHUT_FADE ? 1 : 0) : 0;
     if (Math.abs(targetLevel - this.level) > 0.002) {
-      this.level += (targetLevel - this.level) * Math.min(1, dt * (this.phase === "sleep" ? 5 : 3));
+      this.level += (targetLevel - this.level) * Math.min(1, dt * (this.phase === "shutdown" ? 4 : 3));
       animating = true;
     } else this.level = targetLevel;
-    setPowerLevel(this.phase === "sleep" ? Math.max(0.06, this.level) : this.level);
+    setPowerLevel(this.level);
+    if (this.phase === "shutdown") {
+      this.shutT += dt;
+      animating = true;
+      if (this.shutT >= T_SHUT_END) { this.phase = "off"; this.level = 0; this.resetSession(); this.sync(); }
+    }
     if (this.phase === "booting") {
       if (!this.holdBoot) this.bootT += dt;
       animating = true;
@@ -540,6 +571,7 @@ class ScreenOS {
     g.textBaseline = "alphabetic";
 
     if (this.phase === "booting") this.drawBoot(g);
+    else if (this.phase === "shutdown") this.drawShutdown(g);
     else if (this.phase === "online") {
       switch (this.app) {
         case "menu": this.drawMenu(g); break;
@@ -645,6 +677,27 @@ class ScreenOS {
     g.restore();
   }
 
+  /** Power-off: services stop line by line, then a goodbye, then the backlight fades. */
+  private drawShutdown(g: CanvasRenderingContext2D) {
+    const t = this.shutT;
+    if (t < T_SHUT_BYE) {
+      let y = 90;
+      this.text(g, this.shutBy === "power key" ? "⏻ power key · shutting down…" : `nilkanta@n01:~$ ${this.shutBy}`, 48, y, C.PALE, 28, true);
+      y += 54;
+      const n = Math.min(SHUT_LOG.length, Math.floor(t / 0.28) + 1);
+      SHUT_LOG.slice(0, n).forEach((l) => {
+        this.text(g, "[", 48, y, C.AMBER, 26); this.text(g, "  OK  ", 62, y, C.OK_GREEN, 26, true, false); this.text(g, l.slice(8), 168, y, C.AMBER, 26);
+        y += 40;
+      });
+      return;
+    }
+    g.textAlign = "center";
+    this.text(g, "GOODBYE.", SCREEN_W / 2, SCREEN_H / 2 - 20, C.PALE, 110, true);
+    this.text(g, "thanks for stopping by, operator", SCREEN_W / 2, SCREEN_H / 2 + 50, C.AMBER, 32, false);
+    this.text(g, "session discarded · nothing saved · press ⏻ to boot again", SCREEN_W / 2, SCREEN_H / 2 + 104, C.DIM, 24, false, false);
+    g.textAlign = "left";
+  }
+
   /** Powered off: a faint prompt on the dark glass, like a standby label. */
   private drawStandby(g: CanvasRenderingContext2D) {
     const on = Math.floor(this.t * 2) % 2 === 0 || this.nudge > 0;
@@ -726,7 +779,7 @@ class ScreenOS {
     const preview = this.preview(a.id);
     preview.forEach((l, i) => this.text(g, l, 596, 300 + i * 40, i === 0 ? C.BRIGHT : C.DIM, 26));
     this.text(g, "✓ CONFIRM / CENTRE  ▶  OPEN", 596, 700, C.AMBER, 22, true, false);
-    this.footer(g, "WHEEL / SWIPE  move   ·   ✓ open   ·   ✕ exit screen   ·   ⏻ sleep");
+    this.footer(g, "WHEEL / SWIPE  move   ·   ✓ open   ·   ✕ exit screen   ·   ⏻ power off");
   }
   private preview(id: AppId): string[] {
     switch (id) {
@@ -868,6 +921,7 @@ if (typeof window !== "undefined") {
   });
   screenOS.setTheme(deckOf(useDevice.getState()));
   useDevice.subscribe((s, prev) => {
+    if (s.powerOffSignal !== prev.powerOffSignal) screenOS.shutdown(s.powerOffCmd ?? "poweroff");
     if (deckOf(s) !== deckOf(prev)) screenOS.setTheme(deckOf(s));
     if (s.mode !== prev.mode || s.notice !== prev.notice || s.transmitting !== prev.transmitting || s.terminal !== prev.terminal) screenOS.dirty = true;
   });

@@ -54,7 +54,7 @@ type DeviceState = {
   clearPinnedHotspot: () => void;
 
   /* ---------- physical screen (mirrored from lib/screen/screenOS for the HTML layer) ---------- */
-  screenPhase: "off" | "booting" | "online" | "sleep";
+  screenPhase: "off" | "booting" | "online" | "shutdown";
   screenApp: string;
   /** Inspect mode: camera moved in front of the screen and locked while the visitor operates it. */
   screenFocus: boolean;
@@ -120,6 +120,10 @@ type DeviceState = {
   resetSignal: number;
   requestReset: () => void;
   /** Bumping this asks the camera rig to turn the view square-on to the device screen. */
+  /** Bumped by the `shutdown` / `poweroff` terminal commands: the screen OS powers the N-01 down. */
+  powerOffSignal: number;
+  powerOffCmd: string | null;
+  requestPowerOff: (cmd?: string) => void;
   faceScreenSignal: number;
   requestFaceScreen: () => void;
 };
@@ -239,6 +243,9 @@ export const useDevice = create<DeviceState>((set, get) => ({
 
   resetSignal: 0,
   requestReset: () => set({ resetSignal: get().resetSignal + 1 }),
+  powerOffSignal: 0,
+  powerOffCmd: null,
+  requestPowerOff: (cmd) => set({ powerOffSignal: get().powerOffSignal + 1, powerOffCmd: cmd ?? null }),
   faceScreenSignal: 0,
   requestFaceScreen: () => set({ faceScreenSignal: get().faceScreenSignal + 1 }),
 }));

@@ -164,6 +164,19 @@ registerCommand({
 
 registerCommand({ name: "clear", description: "Clear the screen", aliases: ["cls"], run: (ctx) => ctx.clear() });
 registerCommand({ name: "exit", description: "Close the terminal", aliases: ["quit", "q"], run: (ctx) => ctx.close() });
+registerCommand({
+  name: "shutdown",
+  description: "Power the N-01 off (nothing is saved)",
+  aliases: ["poweroff", "halt"],
+  run: (ctx) => {
+    window.setTimeout(() => ctx.device.requestPowerOff(ctx.raw), 450);
+    return [sys("Broadcast message from nilkanta@n01:"), out("The system will power off now. Goodbye.")];
+  },
+});
+registerCommand({
+  name: "sudo poweroff", description: "", hidden: true, aliases: ["sudo shutdown", "sudo halt"],
+  run: (ctx) => { window.setTimeout(() => ctx.device.requestPowerOff(ctx.raw), 450); return [sys("[sudo] password for visitor: ********"), out("Powering off. Goodbye.")]; },
+});
 
 
 /* ---------------- shell basics ---------------- */
