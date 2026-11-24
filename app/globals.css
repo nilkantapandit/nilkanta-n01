@@ -75,7 +75,7 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 }
 
 /* ---------- technical callouts ---------- */
-.hud-actions { display: flex; gap: 10px; }
+.hud-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .hs-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 4; }
 .hs { position: absolute; left: 0; top: 0; width: 0; height: 0; will-change: transform, opacity; }
 .hs.open { z-index: 2; }

@@ -59,18 +59,26 @@ registerCommand({ name: "hello", description: "Say hi", menu: true, run: () => [
   - Keys: Cancel (back / close), Menu (main menu), Power (boot / sleep / wake), Fullscreen (immersive mode,
     HUD hidden), Confirm (activate). Keys animate and light up when pressed.
   - Keyboard while operating: arrows/WASD move, Enter selects, Esc/Backspace goes back.
+- **Status panel** — `N01://MODE` shows full status briefly after load or a change, then folds to one line;
+  hover / focus opens it, clicking the title pins it.
 - **Operating modes** — the orange slider on the top edge or the N01://MODE panel (top right) switches
   FIELD_COMMS ↔ SECURE_MODE. Both write the same shared state (`lib/store.ts`); the physical screen shows a
   short terminal-style notice (`mode --set …`) over the current app and then returns to it untouched, while
   the panel stays as a status monitor (channel / signal / TX, or session / cipher / uptime).
   Push-to-talk (panel button or hold Space, FIELD_COMMS only) shows TX ACTIVE / STANDBY on both.
   All of it is a visual simulation: nothing is transmitted or encrypted.
+- **Colours** — two independent toggles: `light` (background + interface) and `white-deck` (device shell +
+  screen: white Flipper-style shell with an orange LCD, or charcoal with the amber CRT). Any combination works;
+  both are remembered per browser and default to the system light/dark setting. The GLB is never modified.
+- **Operating from any angle** — the camera is never locked. Tapping the screen while it is seen at an angle
+  turns the view to face it (that tap only turns the view); keys, wheel and touch surface work from any angle.
+  Scrolling over the D-pad moves the menu and never zooms.
 - **Ambient graph** — a faint grid, a few glowing nodes with thin links, drifting dust and two sparse tracking
   brackets behind the N-01 (stencil-masked so it never draws over the device; static with reduced motion,
   lighter on phones / low-power devices).
-- **Pointer** — click anywhere for one thin expanding pulse; a minimal tracking marker replaces the cursor over
-  the scene (mouse only); hovering a control or hotspot shows target-lock brackets; selecting a hotspot still
-  opens its technical callout.
+- **Pointer** — click anywhere for one thin expanding pulse; an orange reticle replaces the cursor over the
+  scene (mouse only); hovering a control or hotspot shows target-lock brackets. The cursor is "sticky": within
+  ~26 px of a key / the wheel / touch surface / mode switch it locks on and a click (or tap) presses it.
 - **Sound** — muted by default; *Sound off/on* enables synthesised effects.
 
 <details><summary>Easter eggs (spoilers)</summary>

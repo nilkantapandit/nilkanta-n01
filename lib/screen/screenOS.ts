@@ -7,7 +7,7 @@
  * DeviceScreen maps onto a plane inside the GLB's display module. Physical controls,
  * the keyboard and taps on the screen all call the input methods below.
  */
-import { useDevice, type TerminalSession, type Notice } from "@/lib/store";
+import { deckOf, useDevice, type TerminalSession, type Notice } from "@/lib/store";
 import { content, COMING_SOON } from "@/lib/content";
 import { complete, runCommand, type Line } from "@/lib/terminal/registry";
 import { welcomeLines } from "@/lib/terminal/commands";
@@ -835,9 +835,9 @@ if (typeof window !== "undefined") {
     const fn = map[s.overlay];
     if (fn) { useDevice.setState({ overlay: "none" }); if (!s.screenFocus) s.setScreenFocus(true); fn(); }
   });
-  screenOS.setTheme(useDevice.getState().theme);
+  screenOS.setTheme(deckOf(useDevice.getState()));
   useDevice.subscribe((s, prev) => {
-    if (s.theme !== prev.theme) screenOS.setTheme(s.theme);
+    if (deckOf(s) !== deckOf(prev)) screenOS.setTheme(deckOf(s));
     if (s.mode !== prev.mode || s.notice !== prev.notice || s.transmitting !== prev.transmitting || s.terminal !== prev.terminal) screenOS.dirty = true;
   });
 }

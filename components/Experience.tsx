@@ -7,7 +7,7 @@ import { AdaptiveDpr, PerformanceMonitor, useProgress } from "@react-three/drei"
 import * as THREE from "three";
 import Scene from "./Scene";
 import { CAMERA_FOV } from "@/lib/config";
-import { useDevice } from "@/lib/store";
+import { deckOf, useDevice } from "@/lib/store";
 import { HOTSPOTS } from "@/lib/hotspots";
 import { useIsMobile } from "@/lib/useIsMobile";
 import TechnicalCallout from "./TechnicalCallout";
@@ -66,11 +66,21 @@ class SceneErrorBoundary extends Component<{ children: React.ReactNode }, { erro
   }
 }
 
+function DeckToggle() {
+  const deck = useDevice((s) => deckOf(s));
+  const setDeck = useDevice((s) => s.setDeck);
+  return (
+    <button className="reset" type="button" aria-pressed={deck === "light"} aria-label="White deck" title="Device colour (independent of the background)" onClick={() => setDeck(deck === "light" ? "dark" : "light")}>
+      white-deck
+    </button>
+  );
+}
+
 function ThemeToggle() {
   const theme = useDevice((s) => s.theme);
   const setTheme = useDevice((s) => s.setTheme);
   return (
-    <button className="reset" type="button" aria-pressed={theme === "light"} aria-label="Light theme" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+    <button className="reset" type="button" aria-pressed={theme === "light"} aria-label="Light theme" title="Background / interface colour" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
       light
     </button>
   );
@@ -127,6 +137,7 @@ export default function Experience() {
           <HintBar />
           <div className="hud-actions">
             <ThemeToggle />
+            <DeckToggle />
             <SoundToggle />
             <button className="reset" type="button" aria-pressed={calloutsVisible} onClick={() => setCalloutsVisible(!calloutsVisible)}>
               callouts

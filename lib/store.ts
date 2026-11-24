@@ -25,6 +25,18 @@ function initialTheme(): Theme {
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
+const DECK_KEY = "n01-deck";
+function initialDeck(): Theme | "auto" {
+  if (typeof window === "undefined") return "auto";
+  try {
+    const saved = window.localStorage.getItem(DECK_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {}
+  return "auto";
+}
+/** Effective deck colour: white Flipper-style shell + orange LCD ("light") or charcoal + amber CRT ("dark"). */
+export const deckOf = (s: { theme: Theme; deckPref: Theme | "auto" }): Theme => (s.deckPref === "auto" ? s.theme : s.deckPref);
+
 export type Overlay = "none" | "hire" | "matrix" | "arcade" | "secret" | "diagnostics";
 
 type DeviceState = {
@@ -92,6 +104,9 @@ type DeviceState = {
   /** Light = Flipper-style (light shell, orange LCD); dark = amber CRT. Persisted per browser. */
   theme: Theme;
   setTheme: (t: Theme) => void;
+  /** Deck (device shell + screen) colour, independent of the background: "auto" follows `theme`. */
+  deckPref: Theme | "auto";
+  setDeck: (t: Theme) => void;
 
   /* ---------- audio ---------- */
   soundOn: boolean;
@@ -208,6 +223,12 @@ export const useDevice = create<DeviceState>((set, get) => ({
     try { window.localStorage.setItem(THEME_KEY, t); } catch {}
     if (typeof document !== "undefined") document.documentElement.dataset.theme = t;
     set({ theme: t });
+  },
+
+  deckPref: initialDeck(),
+  setDeck: (t) => {
+    try { window.localStorage.setItem(DECK_KEY, t); } catch {}
+    set({ deckPref: t });
   },
 
   soundOn: false,

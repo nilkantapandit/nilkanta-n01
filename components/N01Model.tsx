@@ -6,7 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import { Center, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { MODEL_SCALE, MODEL_URL } from "@/lib/config";
-import { useDevice } from "@/lib/store";
+import { deckOf, useDevice } from "@/lib/store";
 import { CONTROL_NODES, NO_RAYCAST_NODES, OCCLUDER_NODES } from "@/lib/controls";
 import { initDeviceMaterials, prepareControlMaterials, setShellTheme } from "@/lib/deviceMaterials";
 import { useControlHandlers } from "./DeviceControls";
@@ -85,7 +85,7 @@ export default function N01Model({ idle }: Props) {
   }, [scene]);
 
   // light theme → Flipper-white shell (runtime colour swap, reversible)
-  const light = useDevice((s) => s.theme === "light");
+  const light = useDevice((s) => deckOf(s) === "light");
   useEffect(() => { setShellTheme(scene, light); }, [scene, light]);
 
   const setModelRoot = useDevice((s) => s.setModelRoot);

@@ -108,8 +108,7 @@ export const content = {
     links: [{ label: "GitHub", href: "https://github.com/nilkantapandit" }] as Link[],
     phone: "+91 82404 56397" as string | null,
     email: "nilkantapandit@gmail.com" as string | null,
-    /** TODO(nilkanta): LinkedIn profile URL. */
-    linkedin: null as string | null,
+    linkedin: "https://www.linkedin.com/in/nilkanta-pandit-88a9b1290" as string | null,
   },
 };
 
