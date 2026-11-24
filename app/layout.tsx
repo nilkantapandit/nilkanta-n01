@@ -4,9 +4,20 @@ import "@fontsource/jetbrains-mono/latin-500.css";
 import "@fontsource/jetbrains-mono/latin-700.css";
 import "./globals.css";
 
+const DESCRIPTION = "Boot a Linux cyberdeck in your browser — the interactive 3D portfolio of Nilkanta Pandit, DevOps engineer.";
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nilkanta-n01.vercel.app"),
   title: "NILKANTA N-01 — Portable Linux Computer",
-  description: "Real-time 3D prototype of the NILKANTA N-01 rugged Linux cyberdeck.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "NILKANTA N-01",
+    title: "NILKANTA N-01 — Portable Linux Computer",
+    description: DESCRIPTION,
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "The NILKANTA N-01 cyberdeck powered on, showing its menu" }],
+  },
+  twitter: { card: "summary_large_image", title: "NILKANTA N-01 — Portable Linux Computer", description: DESCRIPTION, images: ["/og.jpg"] },
 };
 
 export const viewport: Viewport = {
