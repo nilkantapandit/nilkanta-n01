@@ -19,7 +19,7 @@ type Props = {
 export function fovFor(aspect: number) {
   return aspect < 1 ? CAMERA_FOV_PORTRAIT : CAMERA_FOV;
 }
-function heroDistance(aspect: number) {
+export function heroDistance(aspect: number) {
   const halfFov = THREE.MathUtils.degToRad(fovFor(aspect) / 2);
   const needed = FRAME_HALF_WIDTH / (Math.tan(halfFov) * Math.min(aspect, 1.6)) * (aspect < 1 ? 0.9 : 1);
   return Math.max(MIN_HERO_DISTANCE, needed);

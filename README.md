@@ -66,7 +66,7 @@ registerCommand({ name: "hello", description: "Say hi", menu: true, run: () => [
   short terminal-style notice (`mode --set …`) over the current app and then returns to it untouched, while
   the panel stays as a status monitor (channel / signal / TX, or session / cipher / uptime).
   Push-to-talk (panel button or hold Space, FIELD_COMMS only) shows TX ACTIVE / STANDBY on both.
-- **Field manual:** a plain-language how-to overlay (device wireframe with numbered controls, quick start, mouse/keyboard basics). Opens on the first visit; reopen with `? guide` or the `?` key.
+- **Field manual:** a plain-language how-to drawn as a hologram panel in the 3D scene, beside the device (above it on phones): device wireframe with numbered controls, quick start, mouse/keyboard basics. It stays put when you zoom, turns with the view, and the device hides what is behind it. On by default; `guide` button or `?` key shows / hides it (remembered).
   All of it is a visual simulation: nothing is transmitted or encrypted.
 - **Colours** — two independent toggles: `light` (background + interface) and `white-deck` (device shell +
   screen: white Flipper-style shell with an orange LCD, or charcoal with the amber CRT). Any combination works;

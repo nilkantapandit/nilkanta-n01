@@ -122,7 +122,7 @@ export const HOTSPOTS: Hotspot[] = [
   {
     id: "buttons",
     node: "N01_Btn_Power",
-    offset: [0.0065, -0.0047, 0],
+    offset: [0.0, -0.0105, 0],   // below the key row, so the dot never sits on a key (phones)
     normal: [0, 0, 1],
     card: [0, 130],
     title: "FUNCTION KEYS",

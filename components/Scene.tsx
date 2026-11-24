@@ -1,5 +1,6 @@
 "use client";
 
+import GuideHologram from "./GuideHologram";
 import { Suspense, useMemo, useRef } from "react";
 import { ContactShadows, Environment, Lightformer, Sparkles } from "@react-three/drei";
 import N01Model from "./N01Model";
@@ -57,12 +58,14 @@ export default function Scene({ resetSignal, lowPower }: Props) {
         <HotspotProjector />
         <DeviceScreen />
         <ModeEffects />
+        <GuideHologram />
       </Suspense>
 
-      {/* Satin presentation floor (no mirror pass: one less full scene render per frame) */}
+      {/* Satin presentation floor (no mirror pass: one less full scene render per frame).
+          No depth write, so the guide hologram is never cut off by the floor. */}
       <mesh rotation-x={-Math.PI / 2} position={[0, FLOOR_Y, 0]}>
         <planeGeometry args={[40, 40]} />
-        <meshStandardMaterial color={light ? "#f3f1ec" : "#0a0909"} roughness={light ? 0.6 : 0.42} metalness={light ? 0.05 : 0.35} />
+        <meshStandardMaterial depthWrite={false} color={light ? "#f3f1ec" : "#0a0909"} roughness={light ? 0.6 : 0.42} metalness={light ? 0.05 : 0.35} />
       </mesh>
       <ContactShadows position={[0, FLOOR_Y + 0.002, 0]} opacity={light ? 0.4 : 0.55} scale={6} blur={2.4} far={1.6} resolution={256} color="#000000" />
 
