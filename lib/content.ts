@@ -17,19 +17,19 @@ export const content = {
   handle: "nilkanta",
   name: "Nilkanta",
   fullName: "Nilkanta Pandit",
-  headline: "DevOps Engineer",
+  headline: "DevOps Engineer · Cloud Infrastructure · Web Security",
   /** Shown next to the mascot. */
   mascotLine: "chill, I'm here",
   currentOrg: "Viacon Marketing & Technologies",
 
   /** First-person bio. Written from confirmed facts — TODO(nilkanta): rewrite in your own words if you like. */
-  bio: "I'm a DevOps engineer who builds and runs the plumbing behind client projects: AWS infrastructure, Docker images and GitHub Actions pipelines that ship to EKS, and Cloudflare in front of it all. I also handle the messy side of production: security incident response, forensic clean-ups, host migrations and cost investigations, written up in reports clients can act on. I started as an IT intern in 2024, and in my spare time I design hardware like the N-01 you're holding." as string | null,
+  bio: "I'm a DevOps and cloud infrastructure engineer with 2.5+ years of hands-on work for agency clients: AWS and DigitalOcean servers, Docker images and GitHub Actions pipelines that ship to EKS, Linux administration, and zero-downtime site migrations. I also handle the messy side of production — WordPress security incidents, malware clean-ups, Cloudflare security headers and cookie-consent compliance — and use AI-assisted workflows to automate reports, audits and documentation. In my spare time I design hardware like the N-01 you're holding." as string | null,
   /** "At a glance" rows on the ABOUT page. */
   glance: [
     ["Role", "DevOps Engineer · Viacon Marketing & Technologies"],
-    ["In IT since", "2024 (intern → associate → engineer)"],
+    ["Experience", "2.5+ years (since Mar 2024)"],
     ["Focus", "Cloud infrastructure · CI/CD · edge security · incident response"],
-    ["Stack", "AWS (EC2, EKS) · Docker · GitHub Actions · Cloudflare · Linux · Bash"],
+    ["Stack", "AWS · DigitalOcean · Docker · GitHub Actions · Cloudflare · Linux · Bash"],
   ] as [string, string][],
   /** What I do — CV-style highlights (no qualifications, by request). */
   whatIDo: [
@@ -51,16 +51,22 @@ export const content = {
     "Designer of the NILKANTA N-01 cyberdeck concept shown on this site",
   ],
   /** TODO(nilkanta): location / timezone line, e.g. "Kolkata, India · IST" — only if you want it public. */
-  location: null as string | null,
+  location: "Kolkata, West Bengal · IST" as string | null,
 
   skills: [
-    { group: "Cloud & containers", items: ["AWS — EC2, cost analysis (egress)", "Docker images & registries (DockerHub)", "Amazon EKS (exposure)", "Docker Compose"] },
-    { group: "CI/CD", items: ["GitHub Actions → DockerHub → EKS", "Automated, auditable deploys with rollback"] },
-    { group: "Edge & security", items: ["Cloudflare — DNS, routing, CDN, DDoS rules, SSL/TLS", "Security headers — CSP, X-Frame-Options, SRI, Permissions-Policy", "Incident response & forensics (Bash over SSH)"] },
-    { group: "Web operations", items: ["Host migrations (GoDaddy → Kinsta, Migrate Guru)", "Gravity Forms ↔ HubSpot, Cookiebot, GTM, reCAPTCHA", "WordPress maintenance & monthly reports"] },
+    { group: "Cloud & hosting", items: ["AWS — EC2, S3, CloudFront, Amazon EKS (exposure), cost analysis", "DigitalOcean Droplets", "Kinsta · GoDaddy · WP Engine · SiteGround · WHC.ca · Hostinger"] },
+    { group: "DevOps & CI/CD", items: ["GitHub Actions", "Docker · DockerHub", "Git", "Bash scripting · cron automation", "SSH key management"] },
+    { group: "Linux & servers", items: ["Ubuntu Linux", "WHM / cPanel", "Nginx / Apache (.htaccess)", "Firewall hardening · unattended security updates", "DNS management"] },
+    { group: "Networking & CDN", items: ["Cloudflare — DNS, CDN, WAF / DDoS rules, SSL/TLS", "DNS propagation", "CCNA networking fundamentals"] },
+    { group: "Web security", items: ["WordPress incident response", "Malware / SEO-spam cleanup · backdoor removal", "CVE triage", "Security headers — CSP, X-Frame-Options, SRI, Permissions-Policy", "Burp Suite vulnerability scanning"] },
+    { group: "WordPress & CMS", items: ["WordPress administration · WooCommerce", "Gravity Forms · WPML · WPCode", "Migrate Guru · staging → production", "Plugin and core updates"] },
+    { group: "Integrations & compliance", items: ["HubSpot forms · Mailchimp", "WooCommerce REST API · Shiprocket", "Google Tag Manager · reCAPTCHA", "Cookiebot (GDPR / CCPA consent)"] },
+    { group: "Scripting & tools", items: ["Python (Flask)", "Frappe Framework · MariaDB · Redis", "Node.js document automation", "LibreOffice"] },
+    { group: "Monitoring & IT assets", items: ["MeshCentral", "Snipe-IT", "Microsoft Teams alerts via Power Automate webhooks"] },
+    { group: "AI & prompt engineering", items: ["ChatGPT · Claude · DeepSeek", "Prompts for automation, audits, research and documentation"] },
     { group: "3D & design", items: ["Blender modelling (N-01 concept)"] },
   ],
-  toolbox: ["AWS EC2", "Amazon EKS", "Docker", "DockerHub", "GitHub Actions", "Cloudflare", "Linux", "Bash", "SSH", "Nginx", "Python / Flask", "Kinsta", "WordPress"] as string[] | null,
+  toolbox: ["AWS (EC2 · S3 · CloudFront · EKS)", "DigitalOcean", "Docker", "GitHub Actions", "Cloudflare", "Ubuntu Linux", "Bash", "Nginx / Apache", "WHM / cPanel", "Python / Flask", "Frappe", "WordPress", "Burp Suite", "MeshCentral", "Snipe-IT"] as string[] | null,
 
   projects: [
     {
@@ -70,6 +76,21 @@ export const content = {
       href: "https://github.com/nilkantapandit/nilkanta-n01",
     },
     {
+      name: "Actyvate.ai — chatbot on AWS",
+      summary: "Set up the AWS EC2 server environment, CI/CD pipeline and infrastructure for production hosting of chatbot workflows; frontend on Amazon S3 + CloudFront with automatic cache invalidation.",
+      tags: ["aws", "ec2", "s3", "cloudfront", "ci/cd"],
+    },
+    {
+      name: "Gwebpro.com — Node.js deployment",
+      summary: "Provisioned a DigitalOcean Droplet, dockerized the Node.js application and automated deployments through GitHub Actions and DockerHub.",
+      tags: ["digitalocean", "docker", "github-actions", "node.js"],
+    },
+    {
+      name: "Website health monitoring",
+      summary: "Cron-scheduled URL monitor on AWS EC2 (Ubuntu) with retry/timeout logic, lock files against overlapping runs and Microsoft Teams alerts via Power Automate; hardened with SSH-only firewall rules and unattended updates.",
+      tags: ["aws", "bash", "cron", "monitoring"],
+    },
+    {
       name: "wordpress-setup",
       summary: "Bash scripts that automate WordPress server setup — new-site install, Nginx configuration and domain swaps.",
       tags: ["bash", "wordpress", "nginx", "linux"],
@@ -77,8 +98,13 @@ export const content = {
     },
     {
       name: "Maintenance report generator",
-      summary: "Flask app that builds the monthly website maintenance reports (.docx) for client sites.",
+      summary: "Internal Flask web app that generates branded monthly maintenance reports (.docx) for client websites, cutting manual reporting; Docker deployment with database-backed history planned.",
       tags: ["python", "flask", "automation"],
+    },
+    {
+      name: "Field-service marketplace backend (in progress)",
+      summary: "Modular backend for on-demand equipment repair: service-request lifecycle, technician dispatch, equipment custody tracking, estimates, advance payments and a partner earnings ledger.",
+      tags: ["frappe", "mariadb", "redis", "docker"],
     },
     {
       name: "my-node-app",
@@ -117,9 +143,24 @@ export const content = {
     },
     {
       title: "DevOps, Cloud Infrastructure & IT Associate", org: "Sourcedesk Global", period: "Aug 2024 – Oct 2025",
-      notes: ["DevOps, cloud infrastructure and IT operations"], // TODO(nilkanta): add CV bullet points for this role
+      notes: [
+        "Designed and implemented CI/CD pipelines using GitHub Actions for Node.js and Python applications on AWS EC2 and DigitalOcean.",
+        "Configured Docker environments and managed DockerHub integrations for reliable, repeatable deployments.",
+        "Managed AWS EC2, DigitalOcean Droplets and managed hosting providers including WHC.ca and SiteGround.",
+        "Handled DNS management, WHM/cPanel administration and end-to-end cloud migrations with minimal downtime.",
+        "Deployed MeshCentral for secure device monitoring and remote management, and Snipe-IT for IT asset lifecycle tracking.",
+        "Conducted vulnerability scanning with Burp Suite and worked with developers on remediation.",
+        "Crafted AI prompts to speed up technical research, documentation and automation workflows.",
+      ],
     },
-    { title: "IT Intern", org: "Sourcedesk Global", period: "Mar 2024 – Jul 2024" },
+    {
+      title: "IT Intern", org: "Sourcedesk Global", period: "Mar 2024 – Jul 2024",
+      notes: [
+        "Assisted with server setup, infrastructure migrations and day-to-day system administration.",
+        "Gained hands-on experience with Docker, Linux servers and Git-based workflows.",
+        "Supported LAN setup and remote employee device management.",
+      ],
+    },
   ] as Role[],
 
   security: [
