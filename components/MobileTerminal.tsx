@@ -10,7 +10,7 @@ import { useDevice } from "@/lib/store";
 import { screenOS } from "@/lib/screen/screenOS";
 import type { Line } from "@/lib/terminal/registry";
 
-const CHIPS = ["about", "experience", "skills", "projects", "contact", "cheat docker", "cheat kubectl", "help", "clear"];
+const CHIPS = ["about", "experience", "skills", "certs", "projects", "contact", "cheat docker", "cheat kubectl", "help", "clear"];
 export const FORCE_3D_KEY = "n01-force-3d";
 
 function TermLine({ l }: { l: Line }) {

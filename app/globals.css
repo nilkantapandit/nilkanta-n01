@@ -260,3 +260,4 @@ body { -webkit-font-smoothing: antialiased; font-variant-ligatures: none; font-f
 .mt-chips button { flex: 0 0 auto; font: 12px var(--mono); color: var(--ink); background: rgba(var(--panel), 0.9); border: 1px solid var(--line); border-radius: 3px; padding: 7px 10px; }
 .mt-chips button:active { border-color: var(--orange); color: var(--orange); }
 .mt-3d-back { position: fixed; z-index: 60; left: 12px; bottom: 12px; font: 11px var(--mono); color: var(--ink); background: rgba(var(--panel), 0.9); border: 1px solid var(--line); padding: 6px 10px; }
+body.holo-drag, body.holo-drag * { cursor: grabbing !important; user-select: none; }

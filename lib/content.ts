@@ -163,6 +163,14 @@ export const content = {
     },
   ] as Role[],
 
+  /** Certifications (from the CV). */
+  certifications: [
+    { name: "AWS Cloud Certification", by: "Amazon Web Services", year: "in progress" },
+    { name: "Hardware & Networking — CCNA", by: "George Telegraph Training Institute / Cisco NetAcad", year: "2024" },
+    { name: "Python 3 Basics", by: "Programming Hub by Google Launchpad", year: "2023" },
+    { name: "Linux Basics", by: "Programming Hub by Google Launchpad", year: "2023" },
+  ] as { name: string; by: string; year: string }[],
+
   security: [
     "Incident response: SEO spam, malicious directories, poisoned .htaccess files and obfuscated backdoors found and removed",
     "Forensic evidence collection with Bash scripts over SSH, written up as investigation reports",

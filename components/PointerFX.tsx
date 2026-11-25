@@ -203,7 +203,8 @@ export default function PointerFX() {
 /* ---------- in-canvas: target lock (hovered control / hotspot / magnet) + sticky-cursor search ---------- */
 const DISPLAY_NODES = new Set(["N01_Display_Module", "N01_Display_Bezel", "N01_Display_UI"]);
 /** Controls the cursor can "stick" to (small targets; the screen itself is big enough). */
-const MAGNET_IDS = new Set<ControlId>(["wheel", "wheel-center", "touchpad", "btn-cancel", "btn-menu", "btn-power", "btn-fullscreen", "btn-confirm", "back", "switch"]);
+// wheel + touch pad are big enough to hit directly; magnets there stole swipes and the nearby back key
+const MAGNET_IDS = new Set<ControlId>(["btn-cancel", "btn-menu", "btn-power", "btn-fullscreen", "btn-confirm", "back", "switch"]);
 const MAGNET_PX = 26;
 type Rect = { x0: number; y0: number; x1: number; y1: number };
 
@@ -265,6 +266,11 @@ export function TargetLockProjector() {
 
   /** Control the cursor should stick to: nearest projected outline within `reach` px; ties → nearest centre. */
   const findMagnet = (x: number, y: number, reach = MAGNET_PX): Magnet | null => {
+    // never pull the cursor away from a callout dot sitting on / near a control
+    for (const d of document.querySelectorAll<HTMLElement>(".hs-dot")) {
+      const r = d.getBoundingClientRect();
+      if (r.width && Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) < 22) return null;
+    }
     let best: { m: Magnet; d: number; c: number } | null = null;
     for (const { id, node } of nodes) {
       const h = hullOf(node);

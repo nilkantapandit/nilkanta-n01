@@ -123,7 +123,7 @@ export function drawFrame(canvas: HTMLCanvasElement, theme: "dark" | "light", as
   // scroll track (the thumb is a separate moving plane)
   ctx.fillStyle = p.faint; ctx.fillRect(W - 26, 40, 6, H - 80);
   ctx.font = f(22); ctx.fillStyle = p.dim; ctx.textAlign = "right";
-  ctx.fillText(touch ? "drag ↕ to scroll" : "scroll ↕ to read", W - 40, H - 22);
+  ctx.fillText(touch ? "drag ↕ scroll · ↔ move" : "scroll ↕ read · drag ↔ move", W - 40, H - 22);
 }
 
 function paint(ctx: CanvasRenderingContext2D, layout: HoloLayout, theme: "dark" | "light", W: number, H: number) {
@@ -172,7 +172,7 @@ function paint(ctx: CanvasRenderingContext2D, layout: HoloLayout, theme: "dark" 
   head(layout === "side" ? "mouse" : "touch");
   ctx.font = f(BODY - 2); ctx.fillStyle = p.ink;
   for (const l of layout === "side"
-    ? ["drag the background — rotate the view", "scroll — zoom (scroll over this panel to read it)", "orange dots — what each part is", "reset-view — back to the start"]
+    ? ["drag the background — rotate the view", "scroll — zoom (over this panel: read it)", "drag this panel sideways — move it round the deck", "orange dots — what each part is", "reset-view — back to the start"]
     : ["drag the background — rotate · pinch — zoom", "drag this panel — scroll it", "orange dots — what each part is"]) lines(l, PAD, TW);
   if (layout === "side") {
     y += LH * 0.2;

@@ -414,7 +414,7 @@ class ScreenOS {
         break;
       case "devops":
         this.pageTitle = "DEVOPS";
-        lines = [...(await run("experience")), ...(await run("skills"))];
+        lines = [...(await run("experience")), ...(await run("skills")), ...(await run("certs"))];
         break;
       case "projects":
         this.pageTitle = "PROJECTS";

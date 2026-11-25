@@ -49,11 +49,14 @@ export function aboutLines(): Line[] {
     ...section("WHAT I DO"),
     ...content.whatIDo.map((w) => out(`▸ ${w}`)),
     blank(),
+    ...section("CERTIFICATIONS"),
+    ...content.certifications.map((c) => out(`▸ ${c.name} — ${c.year}`)),
+    blank(),
     ...section("OFF THE CLOCK"),
     ...content.offTheClock.map((w) => out(`▸ ${w}`)),
     ...(content.location ? [blank(), dim(content.location)] : []),
     blank(),
-    dim("more: experience · skills · projects · contact"),
+    dim("more: experience · skills · certs · projects · contact"),
   ];
 }
 
@@ -92,6 +95,13 @@ registerCommand({
     ]),
     ...(content.moreProjectsPending ? soon("more projects") : []),
   ],
+});
+
+registerCommand({
+  name: "certs",
+  description: "Certifications",
+  aliases: ["certifications", "certificates"],
+  run: () => [...section("CERTIFICATIONS"), ...content.certifications.flatMap((c) => [out(`▸ ${c.name} (${c.year})`), dim(`  ${c.by}`)])],
 });
 
 registerCommand({
