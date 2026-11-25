@@ -74,7 +74,7 @@ const LINUX = [
 ];
 // timeline (seconds)
 // power-off timeline (seconds): log lines, goodbye, fade, dark
-const T_SHUT_BYE = 1.9, T_SHUT_FADE = 3.6, T_SHUT_END = 4.4;
+const T_SHUT_BYE = 1.9, T_SHUT_FADE = 4.6, T_SHUT_END = 5.4;
 const SHUT_LOG = [
   "[  OK  ] Stopped radio.service / securityd.",
   "[  OK  ] Stopped nsh web shell.",
@@ -398,7 +398,7 @@ class ScreenOS {
     switch (id) {
       case "about":
         this.pageTitle = "ABOUT ME";
-        lines = aboutLines();
+        lines = [...aboutLines(), { kind: "dim", text: "" }, ...Array.from({ length: MASCOT_ROWS }, () => ({ kind: "dim" as const, text: "" }))];
         break;
       case "system":
         this.pageTitle = "SYSTEM";
@@ -700,6 +700,7 @@ class ScreenOS {
       });
       return;
     }
+    this.drawMascot(g, SCREEN_W / 2 - 8 * 7 - 70, SCREEN_H / 2 - 262, 7, "right", "bye, operator!", true);
     g.textAlign = "center";
     this.text(g, "GOODBYE.", SCREEN_W / 2, SCREEN_H / 2 - 20, C.PALE, 110, true);
     this.text(g, "thanks for stopping by, operator", SCREEN_W / 2, SCREEN_H / 2 + 50, C.AMBER, 32, false);
@@ -811,9 +812,18 @@ class ScreenOS {
       g.fillStyle = C.AMBER; g.fillRect(36, 84, SCREEN_W - 72, 40);
       this.text(g, this.banner, 52, 113, C.INV, 24, true, false);
     }
-    if (this.app === "about" && this.scroll === 0) this.drawMascot(g, 1060, 96, 6);
     const y0 = PAGE_Y0 + (this.banner ? 30 : 0);
     const rows = PAGE_ROWS - (this.banner ? 1 : 0);
+    if (this.app === "about") {
+      // avatar sits in the blank rows reserved at the end of the page, and scrolls with it
+      const at = this.page.length - MASCOT_ROWS;
+      if (at < this.scroll + rows) {
+        g.save();
+        g.beginPath(); g.rect(0, y0, SCREEN_W, rows * PAGE_ROW); g.clip();
+        this.drawMascot(g, 80, y0 + (at - this.scroll) * PAGE_ROW + 4, 7, "right");
+        g.restore();
+      }
+    }
     const items = this.page.map((l, i) => (l.item ? i : -1)).filter((i) => i >= 0);
     const selRow = items[this.itemSel];
     this.page.slice(this.scroll, this.scroll + rows).forEach((l, k) => {
@@ -832,10 +842,10 @@ class ScreenOS {
   }
 
   /** Pixel mascot (a tiny Nilkanta in headphones) with a speech bubble. Blinks now and then. */
-  private drawMascot(g: CanvasRenderingContext2D, x: number, y: number, px: number) {
+  private drawMascot(g: CanvasRenderingContext2D, x: number, y: number, px: number, side: "left" | "right" = "left", msg = content.mascotLine, wave = false) {
     const blink = (this.t % 4.2) < 0.14;
     const bob = Math.floor(this.t * 1.5) % 2 === 0 && !reducedMotion() ? 0 : px * 0.5;
-    const pal: Record<string, string> = { h: C.AMBER, k: C.AMBER, s: C.FAINT, e: C.PALE, m: C.AMBER, p: C.BRIGHT, o: C.DIM, z: C.AMBER };
+    const pal: Record<string, string> = { h: C.AMBER, c: C.DIM, k: C.AMBER, s: C.FAINT, e: C.PALE, m: C.AMBER, p: C.BRIGHT, o: C.DIM, z: C.AMBER };
     MASCOT.forEach((row, r) => {
       for (let c = 0; c < row.length; c++) {
         let ch = row[c];
@@ -847,15 +857,27 @@ class ScreenOS {
         else g.fillRect(x + c * px, yy, px, px);
       }
     });
-    // speech bubble to the left
-    const msg = content.mascotLine;
+    if (wave) {
+      // right arm up, hand waving between two positions
+      const f = reducedMotion() ? 0 : Math.floor(this.t * 5) % 2;
+      g.fillStyle = C.DIM;
+      const arm: [number, number][] = f ? [[15, 12], [16, 11], [16, 10], [17, 9], [17, 8]] : [[15, 12], [16, 11], [17, 10], [18, 9], [19, 8]];
+      arm.forEach(([c, r]) => g.fillRect(x + c * px, y + r * px, px, px));
+      const [hc, hr] = arm[arm.length - 1];
+      g.fillStyle = C.FAINT; g.fillRect(x + (hc - 0.5) * px, y + (hr - 1.5) * px, px * 2, px * 2);
+      g.strokeStyle = C.AMBER; g.lineWidth = 2; g.strokeRect(x + (hc - 0.5) * px, y + (hr - 1.5) * px, px * 2, px * 2);
+    }
+    // speech bubble beside the avatar
     g.font = font(Math.round(px * 3.4), true);
     const w = g.measureText(msg).width + px * 4, h = px * 6;
-    const bx = x - w - px * 2, by = y + px;
+    const right = side === "right";
+    const bx = right ? x + 16 * px + px * (wave ? 6 : 3) : x - w - px * 2, by = y + px;
     g.fillStyle = C.PANEL; g.fillRect(bx, by, w, h);
     g.strokeStyle = C.AMBER; g.lineWidth = 2; g.strokeRect(bx + 1, by + 1, w - 2, h - 2);
-    g.beginPath(); g.moveTo(bx + w - 1, by + h * 0.35); g.lineTo(bx + w + px * 1.6, by + h * 0.55); g.lineTo(bx + w - 1, by + h * 0.7); g.closePath();
-    g.fillStyle = C.PANEL; g.fill(); g.stroke();
+    g.beginPath();
+    if (right) { g.moveTo(bx + 1, by + h * 0.35); g.lineTo(bx - px * 1.6, by + h * 0.55); g.lineTo(bx + 1, by + h * 0.7); }
+    else { g.moveTo(bx + w - 1, by + h * 0.35); g.lineTo(bx + w + px * 1.6, by + h * 0.55); g.lineTo(bx + w - 1, by + h * 0.7); }
+    g.closePath(); g.fillStyle = C.PANEL; g.fill(); g.stroke();
     this.text(g, msg, bx + px * 2, by + h * 0.68, C.PALE, Math.round(px * 3.4), true, false);
   }
 
@@ -935,14 +957,16 @@ const MENU_Y0 = 100, MENU_ROW = 82;
 const PAGE_Y0 = 92, PAGE_ROW = 40, PAGE_FONT = 27, PAGE_ROWS = 16;
 const GRID_W = 26, GRID_H = 14, CELL = 44;
 
-/** 16 × 18 pixel avatar: h hair · s skin · e eyes · m mouth · p headphones · o hoodie · z zip. */
+/** 16 × 18 pixel avatar (curly hair): h hair · c curl shadow · s skin · e eyes · m mouth · p headphones · o hoodie · z zip. */
+/** Page rows reserved for the avatar at the end of the ABOUT page. */
+const MASCOT_ROWS = 4;
 const MASCOT = [
-  "....hhhhhhhh....",
-  "...hhhhhhhhhhh..",
-  "..hhhhhhhhhhhhh.",
-  "..hhhhhhhhhhhhh.",
-  ".pphsssssssssspp",
-  ".pphsssssssssspp",
+  "..h.hh.hh.hh.h..",
+  ".hhchhchhchhchh.",
+  "hhchhchhchhchhch",
+  "hchhchhchhchhchh",
+  "hpphcsssssssshpp",
+  "hpphsssssssssspp",
   ".ppsseessseessp.",
   ".ppsseessseessp.",
   "..pssssssssssp..",
